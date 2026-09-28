@@ -1,0 +1,23 @@
+{
+  "name": "agentvault",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/vault.test.mjs",
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "styles": "tailwindcss -i ./src/style.css -o ./src/generated.css --minify",
+    "predev": "npm run styles",
+    "prebuild": "npm run styles"
+  },
+  "dependencies": {
+    "ethers": "6.15.0"
+  },
+  "devDependencies": {
+    "ganache": "7.9.2",
+    "solc": "0.8.30",
+    "tailwindcss": "^3.4.17",
+    "vite": "6.1.0"
+  }
+}
