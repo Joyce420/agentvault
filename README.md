@@ -23,7 +23,7 @@ npm run build
 - Agent 服务购买页：`/agent.html` 会读取本地天气服务返回的 HTTP 402 付款要求，检查 Fuji 合约规则；用户在钱包确认付款后，服务端核验交易收据中的 `Paid` 事件、金额、商户和订单编号，再交付固定样例数据。无需模型密钥。此流程是 402 风格原型，**不是 x402 协议实现**。
 - 浏览器检查：上述分支均已实际操作验证；失败请求不扣款，连续成功支付至零后继续付款被拒绝。
 - Fuji 实测：已部署合约并完成真实付款；合约地址 `0x7fb5fcE5542dB70030d6d77788d3a46d2be9C27D`，一笔已确认的[付款交易](https://explorer-test.avax.network/c-chain/tx/0x209f4c61d0fe8c589b6888e9d0a9223234bb8e8bdc360913f2102a2624fe37d0)。超额、非白名单、重复订单预检查均拒绝，余额保持不变。
-- 未完成：Agent 服务购买页的真实 Fuji 端到端钱包测试、主页钱包联调、符合规范的 x402 支付、外部实时数据服务、提交材料。
+- 未完成：主页钱包联调、符合规范的 x402 支付、外部实时数据服务、提交材料。
 
 ## 部署到 Fuji
 
@@ -54,8 +54,14 @@ npm run build
 
 ## 下一步顺序
 
-1. 使用 `/agent.html` 实际完成一次 Fuji 服务购买并确认服务端交付。
+1. 按 `HACKATHON_SUBMISSION.md` 录制已验收的服务购买与规则拦截演示。
 2. 如需申报 x402 能力，先验证并实现真正的 x402 协议；当前不能声称兼容。
 3. 录制演示并完成赛事提交材料。
 
 任何钱包私钥或助记词都不要提交到仓库，也不需要发送到聊天中。
+
+## 最新验收与参赛材料
+
+公开网址：<https://agentvault-joyce420-demo.onrender.com/>。2026-09-29 已在公开 Agent 页面完成报价、合约预检查、真实 Fuji 付款、服务端验链及样例交付，价格为 0.001 测试 AVAX。[验收交易](https://explorer-test.avax.network/c-chain/tx/0x4197bfa96cbbcb9703b80c2754f00c95ec0d344792a9c7840e59c7d043c2eee1)。
+
+完整状态见 `PROJECT_STATUS.md`；参赛介绍与录制脚本见 `HACKATHON_SUBMISSION.md`。
