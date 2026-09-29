@@ -10,12 +10,19 @@
       <nav class="flex flex-wrap gap-5 text-sm text-primary"><a href="/">模拟演示</a><a href="/live.html">链上付款</a><a href="/deploy.html">部署合约</a></nav>
       <header>
         <p class="text-secondary font-mono text-xs">AVALANCHE FUJI · RULE-DRIVEN AGENT</p>
-        <h1 class="text-3xl font-bold mt-2">Agent 购买天气数据</h1>
+        <h1 class="text-3xl font-bold mt-2">输入任务，让 Agent 获取服务</h1>
         <p class="text-on-surface-variant mt-3">一个无需模型密钥的确定性 Agent：自动读取服务的付款要求、核对保险箱规则，并在你确认钱包交易后领取数据。服务端会核验真实 Fuji 交易。</p>
       </header>
       <section class="border border-outline rounded-lg p-5 space-y-4 bg-surface-container-low">
         <h2 class="text-xl font-semibold">任务</h2>
-        <p>为用户获取一份上海天气样例数据。服务价格由服务端返回，Agent 不自行假定金额。</p>
+        <label class="block text-sm">你想做什么？
+          <input id="task" maxlength="500" placeholder="例如：帮我统计这段文本的字数" class="mt-1 block w-full bg-surface-container rounded border border-outline p-3" />
+        </label>
+        <p class="text-sm text-on-surface-variant">目前支持：上海天气样例、文本统计、JSON 格式检查。按关键词选择服务，暂不支持任意问题问答。</p>
+        <label class="block text-sm">任务内容（文本统计或 JSON 检查时填写）
+          <textarea id="content" maxlength="10000" rows="5" placeholder="粘贴要处理的文本或 JSON；不要输入密码、私钥等敏感内容。" class="mt-1 block w-full bg-surface-container rounded border border-outline p-3"></textarea>
+        </label>
+        <p id="quote" class="text-secondary text-sm" aria-live="polite">先输入任务，检查后展示服务与报价。所有付款使用免费 Fuji 测试币。</p>
         <label class="block text-sm">Fuji 合约地址
           <input id="address" placeholder="0x..." class="mt-1 block w-full bg-surface-container rounded border border-outline p-2 text-on-surface font-mono text-xs" />
         </label>

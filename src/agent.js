@@ -1,10 +1,11 @@
 import './generated.css';
-import { BrowserProvider, Contract, formatEther, getAddress, id } from 'ethers';
+import { BrowserProvider, Contract, formatEther, getAddress } from 'ethers';
 import artifact from './contract-artifact.json';
 
 const $ = key => document.getElementById(key);
 const explorer = 'https://explorer-test.avax.network/c-chain';
 let context;
+let purchasing = false;
 
 function step(message) {
   const item = document.createElement('li');
@@ -33,11 +34,14 @@ async function ensureFuji() {
 async function plan() {
   reset();
   $('plan').disabled = true;
+  for (const key of ['task', 'content', 'address']) $(key).disabled = true;
   try {
     const vault = getAddress($('address').value.trim());
-    step('Agent 请求天气服务。');
-    const response = await fetch('/api/weather', { cache: 'no-store' });
+    step('Agent 根据你的任务选择服务。');
+    const response = await fetch('/api/task', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ task: $('task').value, content: $('content').value }) });
     const quote = await response.json();
+    if (response.status !== 402) throw new Error(quote.error || '任务无法处理。');
+    $('quote').textContent = `任务：${quote.task} · 服务：${quote.description} · 报价：${formatEther(BigInt(quote.amountWei))} 测试 AVAX`;
     if (response.status !== 402 || quote.chainId !== 43113 || quote.asset !== 'AVAX') throw new Error('服务没有返回支持的 Fuji 测试付款要求。');
     if (getAddress(quote.vault) !== vault) throw new Error('服务指定的保险箱与你输入的不一致。');
     const merchant = getAddress(quote.merchant);
@@ -54,17 +58,20 @@ async function plan() {
     if (amount > (await contract.perPaymentLimit()) || amount > remaining || amount > (await provider.getBalance(vault))) {
       throw new Error('价格超出单笔上限、剩余预算或金库余额。');
     }
-    const orderId = id(`weather-${vault}-${Date.now()}-${crypto.randomUUID()}`);
+    const orderId = quote.orderId;
     await contract.pay.staticCall(orderId, merchant, amount);
     step(`合约预检查通过，剩余预算 ${formatEther(remaining)} 测试 AVAX。等待你在钱包中确认付款。`);
     context = { contract, orderId, merchant, amount, vault, account };
     $('pay').disabled = false;
   } catch (error) { step(`停止购买：${error.shortMessage || error.message}`); }
-  finally { $('plan').disabled = false; }
+  finally { $('plan').disabled = false; for (const key of ['task', 'content', 'address']) $(key).disabled = false; }
 }
 
 async function pay() {
-  if (!context) return;
+  if (!context || purchasing) return;
+  purchasing = true;
+  $('plan').disabled = true;
+  for (const key of ['task', 'content', 'address']) $(key).disabled = true;
   $('pay').disabled = true;
   const { contract, orderId, merchant, amount, account } = context;
   try {
@@ -80,17 +87,19 @@ async function pay() {
     a.textContent = '查看 Fuji 付款交易';
     $('receipt').replaceChildren(a);
     step('付款成功。Agent 将交易证明交给服务端核验。');
-    const response = await fetch(`/api/weather?tx=${encodeURIComponent(tx.hash)}&order=${encodeURIComponent(orderId)}`, { cache: 'no-store' });
+    const response = await fetch('/api/task', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ tx: tx.hash, order: orderId }) });
     const body = await response.json();
     if (!response.ok) throw new Error(`付款已成功，但服务端未交付：${body.error || response.status}`);
     $('result').textContent = JSON.stringify(body.data, null, 2);
     step('服务端验证了 Paid 事件、收款商户、金额和订单编号，已交付数据。');
   } catch (error) { step(error.shortMessage || error.message); }
-  finally { context = null; }
+  finally { context = null; purchasing = false; $('plan').disabled = false; for (const key of ['task', 'content', 'address']) $(key).disabled = false; }
 }
 
-$('address').value = localStorage.getItem('agentvault.fuji.address') || '';
+$('address').value = localStorage.getItem('agentvault.fuji.address') || '0x7fb5fcE5542dB70030d6d77788d3a46d2be9C27D';
 $('plan').addEventListener('click', plan);
 $('pay').addEventListener('click', pay);
 window.ethereum?.on?.('accountsChanged', () => { reset(); step('钱包账号已变更，请重新检查购买请求。'); });
 window.ethereum?.on?.('chainChanged', () => { reset(); step('网络已变更，请重新检查购买请求。'); });
+
+for (const key of ['task', 'content', 'address']) $(key).addEventListener('input', () => { reset(); $('quote').textContent = '任务已修改，请重新检查服务与报价。'; });

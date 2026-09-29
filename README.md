@@ -65,3 +65,7 @@ npm run build
 公开网址：<https://agentvault-joyce420-demo.onrender.com/>。2026-09-29 已在公开 Agent 页面完成报价、合约预检查、真实 Fuji 付款、服务端验链及样例交付，价格为 0.001 测试 AVAX。[验收交易](https://explorer-test.avax.network/c-chain/tx/0x4197bfa96cbbcb9703b80c2754f00c95ec0d344792a9c7840e59c7d043c2eee1)。
 
 完整状态见 `PROJECT_STATUS.md`；参赛介绍与录制脚本见 `HACKATHON_SUBMISSION.md`。
+
+## 用户输入任务入口更新
+
+`/agent.html` 已改为输入任务和任务内容，支持上海天气固定样例、文本统计、JSON 格式检查；规则匹配，不调用模型。`POST /api/task` 返回绑定任务内容的订单和 0.001 测试 AVAX 报价，付款凭证核验后执行对应任务。未知任务在付款前拒绝。任务仅在服务器内存保留一小时，服务器重启会丢失；不要提交敏感内容。旧 `/api/weather` 保留。新版新增路由与订单内容绑定测试；新版公网钱包全流程尚需验收，之前成功交易属于天气旧入口。
