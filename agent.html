@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AgentVault · Agent 购买服务</title>
+  </head>
+  <body class="bg-surface text-on-surface font-body min-h-screen">
+    <main class="max-w-3xl mx-auto px-5 py-10 space-y-6">
+      <nav class="flex flex-wrap gap-5 text-sm text-primary"><a href="/">模拟演示</a><a href="/live.html">链上付款</a><a href="/deploy.html">部署合约</a></nav>
+      <header>
+        <p class="text-secondary font-mono text-xs">AVALANCHE FUJI · RULE-DRIVEN AGENT</p>
+        <h1 class="text-3xl font-bold mt-2">Agent 购买天气数据</h1>
+        <p class="text-on-surface-variant mt-3">一个无需模型密钥的确定性 Agent：自动读取服务的付款要求、核对保险箱规则，并在你确认钱包交易后领取数据。服务端会核验真实 Fuji 交易。</p>
+      </header>
+      <section class="border border-outline rounded-lg p-5 space-y-4 bg-surface-container-low">
+        <h2 class="text-xl font-semibold">任务</h2>
+        <p>为用户获取一份上海天气样例数据。服务价格由服务端返回，Agent 不自行假定金额。</p>
+        <label class="block text-sm">Fuji 合约地址
+          <input id="address" placeholder="0x..." class="mt-1 block w-full bg-surface-container rounded border border-outline p-2 text-on-surface font-mono text-xs" />
+        </label>
+        <div class="flex flex-wrap gap-3">
+          <button id="plan" class="bg-primary text-on-primary rounded px-4 py-2 font-semibold">让 Agent 检查购买请求</button>
+          <button id="pay" disabled class="bg-secondary text-on-secondary rounded px-4 py-2 font-semibold disabled:opacity-40">确认付款并领取数据</button>
+        </div>
+        <p class="text-xs text-on-surface-variant">付款按钮会打开 MetaMask，由你亲自确认；Agent 无法读取你的私钥。仅限 Fuji 测试 AVAX。</p>
+      </section>
+      <section class="border border-outline rounded-lg p-5 space-y-3 bg-surface-container-low" aria-live="polite">
+        <h2 class="text-xl font-semibold">执行记录</h2>
+        <ol id="steps" class="space-y-2 text-sm list-decimal pl-5"><li>等待任务。</li></ol>
+        <div id="receipt" class="text-sm break-all"></div>
+      </section>
+      <section class="border border-outline rounded-lg p-5 space-y-3 bg-surface-container-low" aria-live="polite">
+        <h2 class="text-xl font-semibold">服务交付</h2>
+        <pre id="result" class="whitespace-pre-wrap text-sm text-on-surface-variant">付款并通过链上验证后显示数据。</pre>
+      </section>
+      <p class="text-xs text-on-surface-variant">此页面演示 HTTP 402 风格的付款请求，尚未实现 x402 协议规范。天气是固定样例，不是实时预报。</p>
+    </main>
+    <script type="module" src="/src/agent.js"></script>
+  </body>
+</html>
