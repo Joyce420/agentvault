@@ -5,9 +5,8 @@ function send(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
-export function weatherServicePlugin() {
-  const service = createWeatherService();
-  const middleware = async (req, res, next) => {
+export function createWeatherMiddleware(service = createWeatherService()) {
+  return async (req, res, next) => {
     const url = new URL(req.url || '/', 'http://localhost');
     if (url.pathname !== '/api/weather') return next();
     if (req.method !== 'GET') return send(res, 405, { error: '只支持 GET' });
@@ -27,6 +26,10 @@ export function weatherServicePlugin() {
     try { return send(res, 200, { data: await service.report(txHash, orderId) }); }
     catch (error) { return send(res, 403, { error: error.message || '付款凭证验证失败' }); }
   };
+}
+
+export function weatherServicePlugin() {
+  const middleware = createWeatherMiddleware();
   return {
     name: 'agentvault-weather-demo',
     configureServer(server) { server.middlewares.use(middleware); },

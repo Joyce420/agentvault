@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: agentvault-joyce420-demo
+    runtime: node
+    plan: free
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
