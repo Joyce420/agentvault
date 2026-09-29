@@ -6,6 +6,7 @@ const input = {
   language: 'Solidity',
   sources: { 'AgentVault.sol': { content: source } },
   settings: {
+    evmVersion: 'paris',
     optimizer: { enabled: true, runs: 200 },
     outputSelection: { '*': { '*': ['abi', 'evm.bytecode.object'] } },
   },
