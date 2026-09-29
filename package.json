@@ -7,9 +7,10 @@
     "test": "node --test test/vault.test.mjs",
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
+    "compile": "node scripts/compile.mjs",
     "styles": "tailwindcss -i ./src/style.css -o ./src/generated.css --minify",
-    "predev": "npm run styles",
-    "prebuild": "npm run styles"
+    "predev": "npm run compile && npm run styles",
+    "prebuild": "npm run compile && npm run styles"
   },
   "dependencies": {
     "ethers": "6.15.0"
