@@ -68,10 +68,12 @@ async function deploy() {
     const contractAddress = await contract.getAddress();
     $('result').append(document.createElement('br'), link(`合约地址：${contractAddress}`, `${explorer}/address/${contractAddress}`));
     localStorage.setItem('agentvault.fuji.address', contractAddress);
+    localStorage.setItem(`agentvault.fuji.merchant.${contractAddress.toLowerCase()}`, merchant);
     setStatus('合约已部署。请在钱包里确认第 2 笔交易：允许测试商户收款。');
     const tx = await contract.setMerchant(merchant, true);
     $('result').append(document.createElement('br'), link('查看商户授权交易', `${explorer}/tx/${tx.hash}`));
     await tx.wait();
+    $('result').append(document.createElement('br'), link('打开链上付款演示', '/live.html'));
     setStatus('完成！请保存上面的合约地址，发给协作开发的朋友。当前主页仍是模拟演示。');
   } finally {
     $('deploy').disabled = false;

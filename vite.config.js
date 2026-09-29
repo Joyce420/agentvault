@@ -5,5 +5,5 @@ import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('.', import.meta.url));
 
 export default defineConfig({
-  build: { rollupOptions: { input: { main: resolve(root, 'index.html'), deploy: resolve(root, 'deploy.html') } } },
+  build: { rollupOptions: { input: { main: resolve(root, 'index.html'), deploy: resolve(root, 'deploy.html'), live: resolve(root, 'live.html') } } },
 });

@@ -1,6 +1,6 @@
 
 export default {
-  content: ["./index.html", "./deploy.html", "./src/**/*.js"],
+  content: ["./index.html", "./deploy.html", "./live.html", "./src/**/*.js"],
   darkMode: "class",
   theme: {
     extend: {

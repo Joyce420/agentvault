@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AgentVault · Fuji 链上演示</title>
+  </head>
+  <body class="bg-surface text-on-surface font-body min-h-screen">
+    <main class="max-w-3xl mx-auto px-5 py-10 space-y-6">
+      <nav class="flex gap-5 text-sm text-primary"><a href="/">模拟演示</a><a href="/deploy.html">部署合约</a></nav>
+      <header>
+        <p class="text-secondary font-mono text-xs">AVALANCHE FUJI · REAL CONTRACT</p>
+        <h1 class="text-3xl font-bold mt-2">链上付款演示</h1>
+        <p class="text-on-surface-variant mt-3">连接钱包后，读取合约真实余额与规则。成功付款需要你在钱包里确认交易；被拒的请求先由合约预检查，不会消耗测试 AVAX 手续费。</p>
+      </header>
+      <section class="border border-outline rounded-lg p-5 space-y-3 bg-surface-container-low">
+        <label class="block text-sm">Fuji 合约地址
+          <input id="address" placeholder="0x..." class="mt-1 block w-full bg-surface-container rounded border border-outline p-2 text-on-surface font-mono text-xs" />
+        </label>
+        <button id="connect" class="bg-primary text-on-primary rounded px-4 py-2 font-semibold">连接钱包并读取合约</button>
+        <div id="wallet" class="font-mono text-xs text-on-surface-variant break-all">尚未连接</div>
+      </section>
+      <section class="grid grid-cols-1 sm:grid-cols-3 gap-3" aria-live="polite">
+        <div class="bg-surface-container-low border border-outline rounded p-4"><div class="text-xs text-on-surface-variant">金库余额</div><div id="balance" class="font-mono text-xl mt-2">—</div></div>
+        <div class="bg-surface-container-low border border-outline rounded p-4"><div class="text-xs text-on-surface-variant">剩余预算</div><div id="budget" class="font-mono text-xl mt-2">—</div></div>
+        <div class="bg-surface-container-low border border-outline rounded p-4"><div class="text-xs text-on-surface-variant">单笔上限</div><div id="limit" class="font-mono text-xl mt-2">—</div></div>
+      </section>
+      <section class="border border-outline rounded-lg p-5 space-y-4 bg-surface-container-low">
+        <h2 class="text-xl font-semibold">发起测试请求</h2>
+        <p id="merchant-note" class="text-sm text-on-surface-variant">等待读取已授权商户。</p>
+        <div class="grid sm:grid-cols-2 gap-3">
+          <button data-action="normal" disabled class="action border border-secondary text-secondary rounded p-3 text-left disabled:opacity-40">正常付款<br /><span class="text-xs">符合上限与白名单</span></button>
+          <button data-action="overcap" disabled class="action border border-error text-error rounded p-3 text-left disabled:opacity-40">超出单笔上限<br /><span class="text-xs">预检查应被拒绝</span></button>
+          <button data-action="unknown" disabled class="action border border-error text-error rounded p-3 text-left disabled:opacity-40">非白名单商户<br /><span class="text-xs">预检查应被拒绝</span></button>
+          <button data-action="replay" disabled class="action border border-error text-error rounded p-3 text-left disabled:opacity-40">重复订单<br /><span class="text-xs">付款成功后可使用</span></button>
+        </div>
+      </section>
+      <section class="border border-outline rounded-lg p-5 space-y-3 bg-surface-container-low" aria-live="polite">
+        <h2 class="text-xl font-semibold">结果</h2>
+        <p id="status" class="text-sm">等待连接钱包。</p>
+        <div id="receipt" class="text-sm break-all"></div>
+      </section>
+    </main>
+    <script type="module" src="/src/live.js"></script>
+  </body>
+</html>
