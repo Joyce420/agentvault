@@ -94,7 +94,9 @@ async function pay(action) {
   busy = true; setButtons();
   $('receipt').replaceChildren();
   const address = await contract.getAddress();
-  const amount = action === 'overcap' ? maxPayment + 1n : maxPayment / 2n;
+  // Exceed by an amount visible at the six-decimal precision used in the UI.
+  const overage = maxPayment / 5n > 1_000_000_000_000n ? maxPayment / 5n : 1_000_000_000_000n;
+  const amount = action === 'overcap' ? maxPayment + overage : maxPayment / 2n;
   const target = action === 'unknown' ? '0x000000000000000000000000000000000000dead' : merchant;
   const orderId = action === 'replay' ? lastPaidOrder : id(`agentvault-${address}-${Date.now()}-${Math.random()}`);
   try {

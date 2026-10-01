@@ -80,6 +80,7 @@
 <div class="flex flex-wrap items-center gap-3"><button id="apply-policy" class="bg-[#38bdf8] text-[#07111d] font-bold rounded px-3 py-2">应用模拟政策</button><span id="policy-error" role="status" class="text-xs text-[#94a3b8]"></span></div>
 <div class="text-xs text-[#94a3b8]">评委 30 秒看懂：选预设或改政策并应用 → 点 01 看放款 → 点 02/03/04 看拦截 → <a href="/live.html" class="text-[#38bdf8] underline">链上演示</a>。可用下方固定金额验证政策变更。</div>
 <div class="flex flex-wrap items-center gap-2 text-xs"><label for="fixed-amount">固定请求金额</label><input id="fixed-amount" type="number" min="0.01" step="0.01" value="2" class="w-24 p-2 rounded bg-[#07111d] border border-[#1f3a4d] text-white"><button id="btn-fixed" class="border border-[#38bdf8] text-[#38bdf8] rounded px-3 py-2">付给 weather.lab</button><span class="text-[#94a3b8]">先用上限 3，再改 1；也可从白名单移除 weather.lab。</span></div>
+<p id="fixed-result" role="status" aria-live="polite" class="hidden rounded border px-3 py-2 text-sm font-semibold"></p>
 </section>
 <!-- 三段式流程走线图 (核心视觉锚点) -->
 <div class="w-full bg-[#0b1827] border border-[#1f3a4d] rounded p-3.5 relative overflow-hidden shadow-md">

@@ -20,6 +20,11 @@ function setText(selector, text) {
   const element = document.querySelector(selector);
   if (element) element.textContent = text;
 }
+function showFixedResult(message, allowed) {
+  const result = $('fixed-result');
+  result.textContent = message;
+  result.className = `rounded border px-3 py-2 text-sm font-semibold ${allowed ? 'border-[#4ade80] bg-[#4ade80]/10 text-[#4ade80]' : 'border-[#fb7185] bg-[#fb7185]/10 text-[#fb7185]'}`;
+}
 function render() {
   $('stat-vault').textContent = money(remaining);
   $('stat-budget').textContent = money(remaining);
@@ -43,7 +48,11 @@ function render() {
   $('replay-target-text').textContent = lastOrder ? `重放 ${lastOrder.orderId}` : '无历史订单';
   $('btn-replay').disabled = false;
 }
-function run(amount, merchant, orderId) {
+function run(amount, merchant, orderId, showNearButton = false) {
+  if (!showNearButton) {
+    $('fixed-result').className = 'hidden rounded border px-3 py-2 text-sm font-semibold';
+    $('fixed-result').textContent = '';
+  }
   const reason = checkPayment({ amount, merchant, orderId }, policy, remaining, paid);
   $('node-agent-intent').textContent = `${money(amount)} → ${merchant}`;
   $('gate-banner').textContent = reason ? `模拟拦截：${reason}` : '模拟规则检查通过';
@@ -55,6 +64,9 @@ function run(amount, merchant, orderId) {
     paid.add(orderId);
     lastOrder = { amount, merchant, orderId };
   }
+  if (showNearButton) showFixedResult(reason
+    ? `模拟付款被拦截：${reason}。未扣额度，剩余 ${money(remaining)}。`
+    : `模拟付款已允许：扣除 ${money(amount)}，剩余 ${money(remaining)}。`, !reason);
   line(reason ? 'REVERT' : 'ALLOW', money(amount), merchant, orderId, reason || '当前政策通过');
   render();
 }
@@ -77,8 +89,11 @@ $('btn-replay').addEventListener('click', () => {
 });
 $('btn-fixed').addEventListener('click', () => {
   const amount = Number($('fixed-amount').value);
-  if (!Number.isFinite(amount) || amount <= 0 || Math.abs(amount * 100 - Math.round(amount * 100)) > 1e-7) return line('REVERT', '—', 'weather.lab', '—', '请输入大于零、最多两位小数的金额');
-  run(amount, 'weather.lab', nextOrder());
+  if (!Number.isFinite(amount) || amount <= 0 || Math.abs(amount * 100 - Math.round(amount * 100)) > 1e-7) {
+    showFixedResult('请输入大于零、最多两位小数的金额；未发起模拟付款。', false);
+    return line('REVERT', '—', 'weather.lab', '—', '请输入大于零、最多两位小数的金额');
+  }
+  run(amount, 'weather.lab', nextOrder(), true);
 });
 function resetSession() {
   remaining = policy.budget;
@@ -88,6 +103,8 @@ function resetSession() {
   $('node-agent-intent').textContent = '空闲中';
   $('merchant-status-badge').textContent = '等待中';
   $('feedback-text').textContent = '选择测试操作以检查当前模拟政策';
+  $('fixed-result').className = 'hidden rounded border px-3 py-2 text-sm font-semibold';
+  $('fixed-result').textContent = '';
   render();
 }
 $('btn-reset').addEventListener('click', () => { resetSession(); line('SESSION_RESET', '—', '—', '—', '模拟会话已重置'); });
