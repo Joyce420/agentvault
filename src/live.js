@@ -13,12 +13,21 @@ let merchant;
 let maxPayment;
 let lastPaidOrder;
 let busy = false;
+let isOwner = false;
 
 const status = message => { $('status').textContent = message; };
+function audit(result, amount, target, orderId, reason) {
+  const row = document.createElement('p');
+  row.textContent = `[${new Date().toLocaleTimeString('zh-CN', { hour12: false })}] ${result} ${amount} ${target} ${orderId} ${reason}`;
+  if ($('audit-log').firstElementChild?.textContent === '等待链上操作。') $('audit-log').replaceChildren();
+  $('audit-log').prepend(row);
+}
 const short = amount => `${Number(formatEther(amount)).toFixed(6)} 测试 AVAX`;
 const errorText = error => error.reason || error.revert?.args?.[0] || error.shortMessage || error.message || '未知错误';
 const setButtons = () => {
-  for (const button of buttons) button.disabled = busy || !contract || (button.dataset.action === 'replay' && !lastPaidOrder);
+  for (const button of buttons) button.disabled = busy || !contract;
+  $('merchant-allow').disabled = busy || !contract || !isOwner;
+  $('merchant-remove').disabled = busy || !contract || !isOwner;
 };
 
 async function readContract() {
@@ -54,6 +63,7 @@ async function connect() {
   const owner = await contract.owner();
   const agent = await contract.agent();
   const account = await signer.getAddress();
+  isOwner = account.toLowerCase() === owner.toLowerCase();
   merchant = localStorage.getItem(`agentvault.fuji.merchant.${address.toLowerCase()}`) || account;
   $('wallet').textContent = `钱包 ${account} · 所有者 ${owner} · Agent ${agent}`;
   lastPaidOrder = localStorage.getItem(`agentvault.fuji.lastPaid.${address.toLowerCase()}`);
@@ -76,6 +86,11 @@ function showTransaction(hash, orderId) {
 
 async function pay(action) {
   if (!contract || busy) return;
+  if (action === 'replay' && !lastPaidOrder) {
+    status('需先有成功订单；未发送交易 / 不消耗测试 AVAX。');
+    audit('REVERT', '—', merchant, '—', '需先有成功订单；未发送交易');
+    return;
+  }
   busy = true; setButtons();
   $('receipt').replaceChildren();
   const address = await contract.getAddress();
@@ -87,6 +102,7 @@ async function pay(action) {
     await contract.pay.staticCall(orderId, target, amount);
     if (action !== 'normal') {
       status('预检查意外通过。为避免误付款，未提交交易。');
+      audit('CHECK_PASSED', short(amount), target, orderId, '预检查意外通过；未发送交易');
       return;
     }
     status('规则检查通过。请在钱包中确认测试 AVAX 付款交易。');
@@ -99,9 +115,11 @@ async function pay(action) {
     localStorage.setItem(`agentvault.fuji.lastPaid.${address.toLowerCase()}`, orderId);
     await readContract();
     status(`付款成功：${short(amount)}。可打开上面的区块浏览器链接查看真实交易。`);
+    audit('ALLOW', short(amount), target, orderId, `交易 ${tx.hash}`);
   } catch (error) {
     if (action === 'normal') status(`付款未完成：${errorText(error)}`);
-    else status(`合约预检查拒绝了${action === 'overcap' ? '超额付款' : action === 'unknown' ? '非白名单商户' : '重复订单'}：${errorText(error)}。未发送交易，也未扣除测试 AVAX。`);
+    else status(`合约预检查拒绝了${action === 'overcap' ? '超额付款' : action === 'unknown' ? '非白名单商户' : '重复订单'}：${errorText(error)}。未发送交易 / 不消耗测试 AVAX。`);
+    audit('REVERT', short(amount), target, orderId, `${errorText(error)}；${action === 'normal' ? '付款未完成' : '未发送交易'}`);
     await readContract().catch(() => {});
   } finally {
     busy = false; setButtons();
@@ -113,3 +131,24 @@ $('connect').addEventListener('click', async () => {
   try { await connect(); } catch (error) { status(`连接失败：${errorText(error)}`); }
 });
 for (const button of buttons) button.addEventListener('click', () => pay(button.dataset.action));
+async function writeMerchant(allowed) {
+  if (!contract || !isOwner || busy) return;
+  try {
+    const target = getAddress($('merchant-address').value.trim());
+    busy = true; setButtons();
+    $('merchant-write-result').textContent = '等待 Owner 在钱包中确认交易……';
+    const tx = await contract.setMerchant(target, allowed);
+    $('merchant-write-result').textContent = `交易已发送：${tx.hash}，等待 Fuji 确认……`;
+    const receipt = await tx.wait();
+    if (receipt.status !== 1) throw new Error('交易未成功');
+    const link = document.createElement('a');
+    link.href = `${explorer}/tx/${tx.hash}`; link.target = '_blank'; link.rel = 'noopener noreferrer';
+    link.className = 'text-primary underline'; link.textContent = `查看 Fuji 交易 ${tx.hash}`;
+    $('merchant-write-result').replaceChildren(document.createTextNode(allowed ? '商户已授权 · ' : '商户已移除 · '), link);
+    audit('POLICY_UPDATED', '—', target, '—', `merchant=${allowed ? 'allowed' : 'removed'} tx=${tx.hash}`);
+    await readContract();
+  } catch (error) { $('merchant-write-result').textContent = `写入失败：${errorText(error)}`; }
+  finally { busy = false; setButtons(); }
+}
+$('merchant-allow').addEventListener('click', () => writeMerchant(true));
+$('merchant-remove').addEventListener('click', () => writeMerchant(false));

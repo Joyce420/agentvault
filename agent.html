@@ -19,6 +19,7 @@
           <input id="task" maxlength="500" placeholder="例如：帮我统计这段文本的字数" class="mt-1 block w-full bg-surface-container rounded border border-outline p-3" />
         </label>
         <p class="text-sm text-on-surface-variant">目前支持：上海天气样例、文本统计、JSON 格式检查。按关键词选择服务，暂不支持任意问题问答。</p>
+        <div class="flex flex-wrap gap-2 text-xs"><button type="button" data-sample="weather" class="sample border border-outline rounded px-2 py-1">查询上海天气</button><button type="button" data-sample="text" class="sample border border-outline rounded px-2 py-1">统计文本字数</button><button type="button" data-sample="json" class="sample border border-outline rounded px-2 py-1">检查 JSON 是否合法</button></div>
         <label class="block text-sm">任务内容（文本统计或 JSON 检查时填写）
           <textarea id="content" maxlength="10000" rows="5" placeholder="粘贴要处理的文本或 JSON；不要输入密码、私钥等敏感内容。" class="mt-1 block w-full bg-surface-container rounded border border-outline p-3"></textarea>
         </label>
@@ -41,7 +42,7 @@
         <h2 class="text-xl font-semibold">服务交付</h2>
         <pre id="result" class="whitespace-pre-wrap text-sm text-on-surface-variant">付款并通过链上验证后显示数据。</pre>
       </section>
-      <p class="text-xs text-on-surface-variant">此页面演示 HTTP 402 风格的付款请求，尚未实现 x402 协议规范。天气是固定样例，不是实时预报。</p>
+      <p class="text-xs text-on-surface-variant">本项目实现可配置模拟政策与 Fuji 链上规则金库（预算 / 单笔上限 / 白名单 / 防重放）。请求形态对齐 HTTP 402 / x402，完整协议与 facilitator 接入列为下一步。天气是固定样例，不是实时预报。</p>
     </main>
     <script type="module" src="/src/agent.js"></script>
   </body>

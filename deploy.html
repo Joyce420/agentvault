@@ -31,7 +31,7 @@
         <label class="block text-sm">测试商户钱包地址
           <input id="merchant" placeholder="0x...；留空时使用你自己的钱包地址" class="mt-1 block w-full bg-surface-container rounded border border-outline p-2 text-on-surface font-mono text-xs" />
         </label>
-        <p class="text-xs text-on-surface-variant">此演示将连接的钱包同时设为所有者和 Agent。商户留空会设为同一钱包，方便单人测试。</p>
+        <p class="text-xs text-on-surface-variant">演示可将同一钱包同时当作 owner 与 agent，方便单人测试。生产环境应拆成 owner / agent / merchant 三个地址。规则只应由 owner 修改；当前合约的预算和单笔上限部署后不可修改，变更须重新部署。</p>
         <button id="deploy" disabled class="bg-secondary text-black rounded px-4 py-2 font-semibold disabled:opacity-40 disabled:cursor-not-allowed">3. 部署并授权商户</button>
       </section>
       <section class="border border-outline rounded-lg p-5 bg-surface-container-low space-y-2" aria-live="polite">

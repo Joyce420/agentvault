@@ -1,71 +1,54 @@
 # AgentVault
 
-给自动化客户端设置可由合约执行的付款规则。比赛原型，尚未审计，仅用于本地或测试资产。
+让 Agent 在 Avalanche Fuji 上支付，但不能越权。
 
-## 运行
+## 问题
 
-需要 Node.js 与 npm。
+Agent 一旦能付款，就可能超额、付给未授权商户，或重放同一订单。资金所有者应制定规则，Agent 不能修改规则。
 
-```sh
-npm install
+## 方案
+
+Owner 设定预算、单笔上限与商户白名单；Fuji 合约在付款前执行，并防止重复订单。Agent 只能提出付款请求，用户在钱包中确认交易；Agent 不持有私钥。首页提供可编辑政策的**本地模拟**。现有合约的预算与单笔上限在部署时确定，修改须部署新合约；Owner 可通过 `setMerchant` 更新链上白名单。首页修改不会改动链上合约。
+
+## 为什么是 Avalanche
+
+Fuji C-Chain 适合测试小额支付，具备快速确认和较低手续费。x402 解决「Agent 怎么付」，AgentVault 解决「Agent 付了也不能越权」：这是面向 x402 的 policy vault 原型，支付意图对齐 HTTP 402 / x402，**完整 x402 协议和 facilitator 尚未实现**。
+
+## 本次黑客松完成
+
+- 可配置的本地模拟政策与三个预设；四种动态付款向量及审计日志。
+- Fuji 原生测试 AVAX 合约：预算、单笔上限、白名单、防重放；链上读写与钱包确认。
+- 浏览器部署与商户授权；规则驱动 Agent 获取 HTTP 402 风格报价、由用户确认付款，服务端验链后交付固定样例或文本/JSON 处理结果。
+- 已有 Fuji [部署合约](https://explorer-test.avax.network/c-chain/address/0x7fb5fcE5542dB70030d6d77788d3a46d2be9C27D)和[公开付款交易](https://explorer-test.avax.network/c-chain/tx/0x4197bfa96cbbcb9703b80c2754f00c95ec0d344792a9c7840e59c7d043c2eee1)。
+
+## 明确没做
+
+完整 x402 facilitator、AI 模型推理、生产级 owner/agent/merchant 三地址分离、通用规则语言、主网与合约审计。天气为固定样例，不是实时预报。服务端领取记录在内存中，重启后丢失。
+
+## 快速演示
+
+1. 打开 [Demo](https://agentvault-joyce420-demo.onrender.com/)，应用「保守」预设，点 01/02/03/04；04 需要先有一笔成功订单。
+2. 将单笔上限改为 1 并应用，再用固定金额 2 向 `weather.lab` 付款，观察拦截；若将 `weather.lab` 移出白名单，同样的请求也会被拦截。
+3. 打开 [Live](https://agentvault-joyce420-demo.onrender.com/live.html) 连接 Fuji 钱包，读取真实合约规则。链上成功付款需钱包确认；失败场景只做预检查，不会产生失败交易。
+4. [Agent 购买页](https://agentvault-joyce420-demo.onrender.com/agent.html)可选择三种任务，获取报价；授权 Agent 钱包确认 Fuji 付款后领取服务结果。[Deploy](https://agentvault-joyce420-demo.onrender.com/deploy.html)可部署自己的合约。
+
+## 链接
+
+- [Demo](https://agentvault-joyce420-demo.onrender.com/) · [Live](https://agentvault-joyce420-demo.onrender.com/live.html) · [Deploy](https://agentvault-joyce420-demo.onrender.com/deploy.html) · [Agent](https://agentvault-joyce420-demo.onrender.com/agent.html)
+- Fuji 合约：`0x7fb5fcE5542dB70030d6d77788d3a46d2be9C27D` · [Fuji 浏览器](https://explorer-test.avax.network/c-chain/address/0x7fb5fcE5542dB70030d6d77788d3a46d2be9C27D)
+
+## 技术栈与启动
+
+Solidity、ethers 6、Vite 6、原生 JavaScript、Tailwind CSS 3、Node.js HTTP 服务、Ganache 测试、Render、Avalanche Fuji C-Chain（Chain ID 43113）。
+
+```bash
+npm ci
 npm test
 npm run dev
-npm run build
 ```
 
-## 当前状态
+生产构建：`npm run build && npm start`。可选环境变量：`PORT`、`FUJI_RPC_URL`、`SERVICE_VAULT`、`SERVICE_MERCHANT`、`NODE_ENV`。构建会生成合约 ABI 和样式；无需模型 API Key。
 
-- Solidity 合约：所有者、指定 Agent、总预算、单笔上限、商家白名单、订单编号去重、暂停与暂停后提款。
-- 本地 EVM 测试：真实部署合约、验证收款余额与规则拒绝；不是 JavaScript 规则模拟。
-- 页面：已接入 Stitch 中文新版，样式在本地构建；支持正常付款、超限、商户拦截、重复订单、预算耗尽及完整重置。明确标为本地模拟，没有钱包连接或真实交易哈希。
-- Fuji 部署页：`/deploy.html` 可用浏览器钱包部署当前原生 AVAX 合约并授权一个测试商户。连接钱包后的所有链上交易都需在钱包里签名；主页付款按钮仍是模拟。
-- 链上演示页：`/live.html` 连接浏览器钱包后读取真实合约余额、预算和单笔上限，正常付款可提交 Fuji 交易并打开区块浏览器。超限、非白名单和重复订单由合约静态调用预检查拒绝，不产生失败交易或链上事件。
-- Agent 服务购买页：`/agent.html` 会读取本地天气服务返回的 HTTP 402 付款要求，检查 Fuji 合约规则；用户在钱包确认付款后，服务端核验交易收据中的 `Paid` 事件、金额、商户和订单编号，再交付固定样例数据。无需模型密钥。此流程是 402 风格原型，**不是 x402 协议实现**。
-- 浏览器检查：上述分支均已实际操作验证；失败请求不扣款，连续成功支付至零后继续付款被拒绝。
-- Fuji 实测：已部署合约并完成真实付款；合约地址 `0x7fb5fcE5542dB70030d6d77788d3a46d2be9C27D`，一笔已确认的[付款交易](https://explorer-test.avax.network/c-chain/tx/0x209f4c61d0fe8c589b6888e9d0a9223234bb8e8bdc360913f2102a2624fe37d0)。超额、非白名单、重复订单预检查均拒绝，余额保持不变。
-- 未完成：主页钱包联调、符合规范的 x402 支付、外部实时数据服务、提交材料。
+## 安全
 
-## 部署到 Fuji
-
-1. 在安装了 MetaMask 或 Core Wallet 的浏览器打开 `npm run dev` 提供的本地地址，再访问 `/deploy.html`。
-2. 点击“连接钱包并切换 Fuji”；从 [Avalanche 官方水龙头](https://build.avax.network/console/primary-network/faucet)领少量测试 AVAX。
-3. 设定预算、单笔上限和商户地址。单人演示时商户可留空，使用同一钱包。
-4. 点击“部署并授权商户”，在钱包里分别确认部署与商户授权。保存部署页显示的真实合约地址与交易链接。
-5. 点击“打开链上付款演示”，连接同一钱包后先做正常付款，再试超额、非白名单及重复订单。正常付款会要求在钱包里再次确认。
-
-当前合约使用测试 AVAX，不是 USDC；连接的钱包会同时作为所有者和授权 Agent。页面不会要求输入私钥。
-
-## Agent 购买服务演示
-
-保持 `npm run dev` 运行，访问 `/agent.html`。点击“让 Agent 检查购买请求”：本地服务返回 402 与 0.001 测试 AVAX 的价格，客户端核对合约白名单、预算和单笔上限。点击“确认付款并领取数据”后，在钱包中亲自签署交易；服务端核验 Fuji 链上收据后才返回上海天气样例。未付款直接访问 `/api/weather` 只会收到付款要求。
-
-本地服务在 Vite 开发服务器中运行。生产构建后也可用 `npm start` 同时提供静态页面和 API；单独把 `dist/` 上传到纯静态托管平台时，该 API 不存在。默认配置对应上面的比赛测试合约及演示钱包。若换合约或商户，在启动服务器前设置 `SERVICE_VAULT`、`SERVICE_MERCHANT` 环境变量。商户地址必须先由合约所有者加入白名单。当前已领取订单保存在服务器内存中，重启服务后会清空；它只适合黑客松演示，不可用于真实付费服务。
-
-## 公开演示网址
-
-仓库根目录的 `render.yaml` 已准备好 Render 免费 Web Service：连接此 GitHub 仓库并创建 Blueprint 后，Render 使用 `npm ci --include=dev && npm run build` 构建、`npm start` 运行，提供一个公开的 `onrender.com` 地址。不要选择纯静态站点，因为 Agent 购买服务需要 `/api/weather`。公网默认仍使用上面的 Fuji 测试合约；其他人可以观看模拟界面，真实付款演示仅限这个合约已授权的 Agent 钱包。免费实例空闲后会休眠，首次访问可能较慢。部署成功后检查首页、`/agent.html` 和 `/api/weather`（后者应返回 402）。
-
-## 资产与边界
-
-当前合约使用原生资产；部署 Fuji 时单位是测试 AVAX，并非 USDC。页面使用演示单位，不能当作真实余额。
-总预算为保险箱生命周期累计额度，追加存款不会重置 spent。每个订单编号只允许成功支付一次；Agent 换编号重复购买不会被认定为同一个订单。
-预算规则不保证商家交付服务或内容质量。商家白名单由所有者管理。暂停不会撤回之前成功付款。
-失败交易可能在钱包模拟阶段被拒绝，不能把所有失败请求称为链上事件。
-
-## 下一步顺序
-
-1. 按 `HACKATHON_SUBMISSION.md` 录制已验收的服务购买与规则拦截演示。
-2. 如需申报 x402 能力，先验证并实现真正的 x402 协议；当前不能声称兼容。
-3. 录制演示并完成赛事提交材料。
-
-任何钱包私钥或助记词都不要提交到仓库，也不需要发送到聊天中。
-
-## 最新验收与参赛材料
-
-公开网址：<https://agentvault-joyce420-demo.onrender.com/>。2026-09-29 已在公开 Agent 页面完成报价、合约预检查、真实 Fuji 付款、服务端验链及样例交付，价格为 0.001 测试 AVAX。[验收交易](https://explorer-test.avax.network/c-chain/tx/0x4197bfa96cbbcb9703b80c2754f00c95ec0d344792a9c7840e59c7d043c2eee1)。
-
-完整状态见 `PROJECT_STATUS.md`；参赛介绍与录制脚本见 `HACKATHON_SUBMISSION.md`。
-
-## 用户输入任务入口更新
-
-`/agent.html` 已改为输入任务和任务内容，支持上海天气固定样例、文本统计、JSON 格式检查；规则匹配，不调用模型。`POST /api/task` 返回绑定任务内容的订单和 0.001 测试 AVAX 报价，付款凭证核验后执行对应任务。未知任务在付款前拒绝。任务仅在服务器内存保留一小时，服务器重启会丢失；不要提交敏感内容。旧 `/api/weather` 保留。新版新增路由与订单内容绑定测试；新版公网钱包全流程尚需验收，之前成功交易属于天气旧入口。
+私钥只留在用户钱包；Agent 不能读私钥。被拒链上请求先用 `staticCall` 预检查，避免无意义消耗测试 AVAX。合约未审计，请仅用 Fuji 测试资产。

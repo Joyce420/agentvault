@@ -103,3 +103,13 @@ window.ethereum?.on?.('accountsChanged', () => { reset(); step('钱包账号已�
 window.ethereum?.on?.('chainChanged', () => { reset(); step('网络已变更，请重新检查购买请求。'); });
 
 for (const key of ['task', 'content', 'address']) $(key).addEventListener('input', () => { reset(); $('quote').textContent = '任务已修改，请重新检查服务与报价。'; });
+for (const button of document.querySelectorAll('.sample')) button.addEventListener('click', () => {
+  const samples = {
+    weather: ['查询上海天气', ''],
+    text: ['统计文本字数', 'AgentVault 让 Agent 支付，但不能越权。'],
+    json: ['检查 JSON 是否合法', '{"project":"AgentVault","network":"Fuji"}'],
+  };
+  [$('task').value, $('content').value] = samples[button.dataset.sample];
+  reset();
+  $('quote').textContent = '样例已填入。点击“让 Agent 检查购买请求”获取报价。';
+});

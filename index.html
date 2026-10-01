@@ -13,12 +13,12 @@
 <span class="font-mono text-[10px] font-medium text-[#38bdf8] bg-[#0b1827] px-2 py-0.5 rounded border border-[#38bdf8]/30">目标：FUJI TESTNET</span>
 </h1>
 <p class="text-xs text-[#94a3b8] mt-0.5">
-        每笔付款都由 Avalanche 智能合约检查预算、收款人和订单，符合规则才放款。
+        Avalanche Fuji · Owner 设定政策，合约强制执行。付款前检查预算、单笔上限、收款人和订单。本页为本地模拟。
       </p>
 </div>
 <div class="font-mono text-[11px] text-[#94a3b8] flex items-center gap-1.5 self-start md:self-auto">
 <span class="w-1.5 h-1.5 rounded-full bg-[#38bdf8]"></span>
-<span>白名单商户: <code class="text-slate-200">weather.lab</code></span>
+<span>白名单商户: <code class="text-slate-200" id="current-merchants">weather.lab</code></span>
 </div>
 </div>
 <!-- 三个顶部核心指标 (高对比度紧凑卡片) -->
@@ -65,7 +65,7 @@
 <span class="font-mono text-[11px] text-[#fb7185] bg-[#07111d] px-1.5 py-0.5 rounded border border-[#1f3a4d]">硬性阈值规则</span>
 </div>
 <div class="my-1.5 flex items-baseline gap-1.5">
-<span class="text-2xl font-bold font-mono text-white tracking-tight">3.00</span>
+<span class="text-2xl font-bold font-mono text-white tracking-tight" id="stat-limit">3.00</span>
 <span class="font-mono text-xs text-[#38bdf8] font-semibold">测试额度</span>
 </div>
 <div class="font-mono text-[11px] text-[#94a3b8] flex items-center justify-between border-t border-[#1f3a4d]/60 pt-1.5">
@@ -74,6 +74,13 @@
 </div>
 </div>
 </div>
+<section class="bg-[#0b1827] border border-[#1f3a4d] rounded p-4 space-y-3" aria-labelledby="policy-title">
+<div class="flex flex-wrap justify-between gap-2"><div><h2 id="policy-title" class="font-bold text-white">Owner 制定模拟政策</h2><p class="text-xs text-[#94a3b8]">应用后立即重置本地会话。Fuji 已部署合约的预算与单笔上限不可在线修改，链上测试请到链上演示页。</p></div><div class="flex gap-2"><button data-preset="conservative" class="text-xs border border-[#1f3a4d] rounded px-2 py-1">保守</button><button data-preset="relaxed" class="text-xs border border-[#1f3a4d] rounded px-2 py-1">宽松</button><button data-preset="locked" class="text-xs border border-[#1f3a4d] rounded px-2 py-1">锁定</button></div></div>
+<div class="grid md:grid-cols-3 gap-2 text-xs"><label>会话预算（演示单位）<input id="policy-budget" type="number" min="0.01" step="0.01" class="block w-full mt-1 p-2 rounded bg-[#07111d] border border-[#1f3a4d] text-white" value="10"></label><label>单笔上限（演示单位）<input id="policy-limit" type="number" min="0.01" step="0.01" class="block w-full mt-1 p-2 rounded bg-[#07111d] border border-[#1f3a4d] text-white" value="3"></label><label>商户白名单（逗号分隔，可增删）<input id="policy-merchants" class="block w-full mt-1 p-2 rounded bg-[#07111d] border border-[#1f3a4d] text-white" value="weather.lab"></label></div>
+<div class="flex flex-wrap items-center gap-3"><button id="apply-policy" class="bg-[#38bdf8] text-[#07111d] font-bold rounded px-3 py-2">应用模拟政策</button><span id="policy-error" role="status" class="text-xs text-[#94a3b8]"></span></div>
+<div class="text-xs text-[#94a3b8]">评委 30 秒看懂：选预设或改政策并应用 → 点 01 看放款 → 点 02/03/04 看拦截 → <a href="/live.html" class="text-[#38bdf8] underline">链上演示</a>。可用下方固定金额验证政策变更。</div>
+<div class="flex flex-wrap items-center gap-2 text-xs"><label for="fixed-amount">固定请求金额</label><input id="fixed-amount" type="number" min="0.01" step="0.01" value="2" class="w-24 p-2 rounded bg-[#07111d] border border-[#1f3a4d] text-white"><button id="btn-fixed" class="border border-[#38bdf8] text-[#38bdf8] rounded px-3 py-2">付给 weather.lab</button><span class="text-[#94a3b8]">先用上限 3，再改 1；也可从白名单移除 weather.lab。</span></div>
+</section>
 <!-- 三段式流程走线图 (核心视觉锚点) -->
 <div class="w-full bg-[#0b1827] border border-[#1f3a4d] rounded p-3.5 relative overflow-hidden shadow-md">
 <div class="flex items-center justify-between mb-2.5 pb-1.5 border-b border-[#1f3a4d]/70 text-xs">
@@ -130,11 +137,11 @@
 <div class="bg-[#07111d]/90 p-2 rounded flex flex-col gap-1 border border-[#1f3a4d] text-[11px] font-mono">
 <div class="flex items-center justify-between text-[#94a3b8]">
 <span>1. 单笔上限规则:</span>
-<span class="text-slate-200 font-semibold">≤ 3.00 测试额度</span>
+<span class="text-slate-200 font-semibold" id="gate-limit">≤ 3.00 演示单位</span>
 </div>
 <div class="flex items-center justify-between text-[#94a3b8]">
 <span>2. 收款人规则:</span>
-<span class="text-[#4ade80] font-semibold">仅限白名单商户 (weather.lab)</span>
+<span class="text-[#4ade80] font-semibold" id="gate-merchants">仅限白名单商户 (weather.lab)</span>
 </div>
 <div class="flex items-center justify-between text-[#94a3b8]">
 <span>3. 订单排重规则:</span>
@@ -158,7 +165,7 @@
           </p>
 </div>
 <div class="bg-[#07111d] px-2 py-1 rounded font-mono text-[11px] flex items-center justify-between border border-[#1f3a4d] mt-1">
-<span class="text-slate-300">weather.lab</span>
+<span class="text-slate-300" id="merchant-name">weather.lab</span>
 <span class="text-[#94a3b8]" id="merchant-status-badge">等待中</span>
 </div>
 </div>
@@ -188,16 +195,16 @@
 <button class="test-btn group bg-[#0f1f2d] hover:bg-[#14283b] border border-[#4ade80]/50 hover:border-[#4ade80] p-2.5 rounded text-left transition-all active:scale-[0.98] flex flex-col justify-between gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#4ade80]/50 shadow-sm" id="btn-normal">
 <div class="flex items-center justify-between w-full font-mono text-[11px]">
 <span class="bg-[#4ade80]/15 text-[#4ade80] font-bold px-1.5 py-0.5 rounded border border-[#4ade80]/30">01 正常</span>
-<span class="text-[#4ade80] font-bold">2.00 额度</span>
+<span class="text-[#4ade80] font-bold vector-amount">2.00 单位</span>
 </div>
 <div>
 <div class="text-[13px] font-bold text-white group-hover:text-[#4ade80] transition-colors">正常付款</div>
-<div class="text-[11px] text-[#94a3b8] leading-tight mt-0.5">
-              金额 2.00，白名单商户，符合规则放款
+<div class="text-[11px] text-[#94a3b8] leading-tight mt-0.5 vector-description">
+              金额 2.00，当前白名单商户，预期放款
             </div>
 </div>
 <div class="font-mono text-[10px] text-[#4ade80] pt-1 border-t border-[#1f3a4d]/60 flex items-center justify-between">
-<span>weather.lab</span>
+<span class="vector-merchant">weather.lab</span>
 <span>预期: 放款成功</span>
 </div>
 </button>
@@ -205,16 +212,16 @@
 <button class="test-btn group bg-[#0f1f2d] hover:bg-[#14283b] border border-[#fb7185]/40 hover:border-[#fb7185] p-2.5 rounded text-left transition-all active:scale-[0.98] flex flex-col justify-between gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#fb7185]/40 shadow-sm" id="btn-overcap">
 <div class="flex items-center justify-between w-full font-mono text-[11px]">
 <span class="bg-[#fb7185]/15 text-[#fb7185] font-bold px-1.5 py-0.5 rounded border border-[#fb7185]/30">02 攻击</span>
-<span class="text-[#fb7185] font-bold">4.00 额度</span>
+<span class="text-[#fb7185] font-bold vector-amount">4.00 单位</span>
 </div>
 <div>
 <div class="text-[13px] font-bold text-white group-hover:text-[#fb7185] transition-colors">超出限额</div>
-<div class="text-[11px] text-[#94a3b8] leading-tight mt-0.5">
-              金额 4.00，超过单笔上限 3.00，合约触发超额回滚
+<div class="text-[11px] text-[#94a3b8] leading-tight mt-0.5 vector-description">
+              金额 4.00，超过单笔上限 3.00，预期拦截
             </div>
 </div>
 <div class="font-mono text-[10px] text-[#fb7185] pt-1 border-t border-[#1f3a4d]/60 flex items-center justify-between">
-<span>4.00 &gt; 3.00</span>
+<span class="vector-comparison">4.00 &gt; 3.00</span>
 <span>预期: 超额回滚</span>
 </div>
 </button>
@@ -222,21 +229,21 @@
 <button class="test-btn group bg-[#0f1f2d] hover:bg-[#14283b] border border-[#fb7185]/40 hover:border-[#fb7185] p-2.5 rounded text-left transition-all active:scale-[0.98] flex flex-col justify-between gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#fb7185]/40 shadow-sm" id="btn-unknown">
 <div class="flex items-center justify-between w-full font-mono text-[11px]">
 <span class="bg-[#fb7185]/15 text-[#fb7185] font-bold px-1.5 py-0.5 rounded border border-[#fb7185]/30">03 越权</span>
-<span class="text-slate-300 font-bold">1.50 额度</span>
+<span class="text-slate-300 font-bold vector-amount">1.50 单位</span>
 </div>
 <div>
 <div class="text-[13px] font-bold text-white group-hover:text-[#fb7185] transition-colors">非白名单商户</div>
 <div class="text-[11px] text-[#94a3b8] leading-tight mt-0.5">
-              目标未授权商户，合约触发商户未授权回滚
+              目标未授权商户，模拟政策应拦截
             </div>
 </div>
 <div class="font-mono text-[10px] text-[#fb7185] pt-1 border-t border-[#1f3a4d]/60 flex items-center justify-between">
-<span>unverified.service</span>
+<span class="vector-unknown-merchant">unverified.service</span>
 <span>预期: 商户拦截</span>
 </div>
 </button>
 <!-- 按钮 4: 重复订单 (初始 disabled) -->
-<button class="test-btn group bg-[#0f1f2d] hover:bg-[#14283b] border border-[#1f3a4d] p-2.5 rounded text-left transition-all flex flex-col justify-between gap-1 opacity-50 cursor-not-allowed shadow-sm" disabled="" id="btn-replay" title="需先发起一笔成功的正常付款">
+<button class="test-btn group bg-[#0f1f2d] hover:bg-[#14283b] border border-[#1f3a4d] p-2.5 rounded text-left transition-all flex flex-col justify-between gap-1 cursor-pointer shadow-sm" id="btn-replay" title="没有成功订单时会提示先完成一笔付款">
 <div class="flex items-center justify-between w-full font-mono text-[11px]">
 <span class="bg-slate-800 text-[#94a3b8] font-bold px-1.5 py-0.5 rounded border border-[#1f3a4d]" id="replay-badge">04 重放</span>
 <span class="text-[#94a3b8] font-bold" id="replay-order-tag">需先有成功订单</span>
@@ -244,7 +251,7 @@
 <div>
 <div class="text-[13px] font-bold text-white group-hover:text-[#fb7185] transition-colors">重复订单</div>
 <div class="text-[11px] text-[#94a3b8] leading-tight mt-0.5">
-              使用上一笔成功付款的订单号再次提交，合约触发订单已支付回滚
+              使用上一笔成功付款的订单号再次提交，模拟政策应拦截
             </div>
 </div>
 <div class="font-mono text-[10px] text-[#94a3b8] pt-1 border-t border-[#1f3a4d]/60 flex items-center justify-between" id="replay-footer">
@@ -285,7 +292,7 @@
 <footer class="w-full bg-[#0b1827] border border-[#1f3a4d] px-4 py-2 rounded flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 shadow-sm mt-0.5">
 <div class="flex flex-col">
 <div class="text-xs font-bold text-white tracking-wide">
-        Agent 发起支付，合约执行限制。
+        Agent 发起支付，政策限制越权。此页是本地模拟；Fuji 合约验证请进入链上页。
       </div>
 <div class="font-mono text-[11px] text-[#94a3b8]">
         AgentVault 本地交互演示环境 · 客户端与智能合约严格职责分离
