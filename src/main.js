@@ -25,6 +25,11 @@ function showFixedResult(message, allowed) {
   result.textContent = message;
   result.className = `rounded border px-3 py-2 text-sm font-semibold ${allowed ? 'border-[#4ade80] bg-[#4ade80]/10 text-[#4ade80]' : 'border-[#fb7185] bg-[#fb7185]/10 text-[#fb7185]'}`;
 }
+function showTestResult(message, allowed) {
+  const result = $('test-result');
+  result.textContent = message;
+  result.className = `rounded border px-3 py-2 text-sm font-semibold ${allowed ? 'border-[#4ade80] bg-[#4ade80]/10 text-[#4ade80]' : 'border-[#fb7185] bg-[#fb7185]/10 text-[#fb7185]'}`;
+}
 function render() {
   $('stat-vault').textContent = money(remaining);
   $('stat-budget').textContent = money(remaining);
@@ -67,6 +72,9 @@ function run(amount, merchant, orderId, showNearButton = false) {
   if (showNearButton) showFixedResult(reason
     ? `模拟付款被拦截：${reason}。未扣额度，剩余 ${money(remaining)}。`
     : `模拟付款已允许：扣除 ${money(amount)}，剩余 ${money(remaining)}。`, !reason);
+  showTestResult(reason
+    ? `已拦截：${money(amount)} → ${merchant}。原因：${reason}；余额未扣，剩余 ${money(remaining)} 演示单位。`
+    : `已放行：${money(amount)} → ${merchant}。扣除后剩余 ${money(remaining)} 演示单位。`, !reason);
   line(reason ? 'REVERT' : 'ALLOW', money(amount), merchant, orderId, reason || '当前政策通过');
   render();
 }
@@ -84,7 +92,10 @@ $('btn-unknown').addEventListener('click', () => {
   run(Math.min(Math.round(policy.perTx * 50) / 100, remaining), merchant, nextOrder());
 });
 $('btn-replay').addEventListener('click', () => {
-  if (!lastOrder) return line('REVERT', '—', '—', '—', '需先有成功订单');
+  if (!lastOrder) {
+    showTestResult('还没有可重放的订单。请先点击「01 正常付款」完成一笔，再点「04 重复订单」。', false);
+    return line('REVERT', '—', '—', '—', '需先有成功订单');
+  }
   run(lastOrder.amount, lastOrder.merchant, lastOrder.orderId);
 });
 $('btn-fixed').addEventListener('click', () => {
@@ -103,6 +114,8 @@ function resetSession() {
   $('node-agent-intent').textContent = '空闲中';
   $('merchant-status-badge').textContent = '等待中';
   $('feedback-text').textContent = '选择测试操作以检查当前模拟政策';
+  $('test-result').textContent = '尚未测试。点击下方按钮开始；这只是本地模拟，不会扣真实 AVAX。';
+  $('test-result').className = 'rounded border border-[#1f3a4d] bg-[#07111d] px-3 py-2 text-sm text-slate-200';
   $('fixed-result').className = 'hidden rounded border px-3 py-2 text-sm font-semibold';
   $('fixed-result').textContent = '';
   render();

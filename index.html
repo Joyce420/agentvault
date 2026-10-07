@@ -22,6 +22,20 @@
 </div>
 </div>
 <!-- 三个顶部核心指标 (高对比度紧凑卡片) -->
+<section class="grid gap-3 md:grid-cols-2" aria-label="从这里开始">
+<div class="rounded border border-[#38bdf8]/60 bg-[#0f2438] p-4">
+<p class="text-xs font-bold text-[#38bdf8]">第一次使用 · 建议先点这里</p>
+<h2 class="mt-1 text-base font-bold text-white">① 免费试规则（本页模拟）</h2>
+<p class="mt-1 text-xs text-[#94a3b8]">不用钱包，不会转钱。先选规则，再点测试按钮，看放行或拦截。</p>
+<a href="#policy-panel" class="mt-3 inline-block rounded bg-[#38bdf8] px-4 py-2 font-bold text-[#07111d] hover:bg-sky-300">开始设置模拟规则 ↓</a>
+</div>
+<div class="rounded border border-[#1f3a4d] bg-[#0b1827] p-4">
+<p class="text-xs font-bold text-[#4ade80]">看真实链上交易</p>
+<h2 class="mt-1 text-base font-bold text-white">② 连接钱包试 Fuji</h2>
+<p class="mt-1 text-xs text-[#94a3b8]">使用 Fuji 测试 AVAX，需钱包确认；本页改的规则不会改变已部署合约。</p>
+<a href="/live.html" class="mt-3 inline-block rounded border border-[#4ade80] px-4 py-2 font-bold text-[#4ade80] hover:bg-[#14283b]">进入真实链上页面 →</a>
+</div>
+</section>
 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
 <!-- 指标 1: 金库余额 -->
 <div class="bg-[#0b1827] border border-[#1f3a4d] p-3 rounded flex flex-col justify-between shadow-sm">
@@ -74,7 +88,7 @@
 </div>
 </div>
 </div>
-<section class="bg-[#0b1827] border border-[#1f3a4d] rounded p-4 space-y-3" aria-labelledby="policy-title">
+<section id="policy-panel" class="bg-[#0b1827] border border-[#1f3a4d] rounded p-4 space-y-3 scroll-mt-20" aria-labelledby="policy-title">
 <div class="flex flex-wrap justify-between gap-2"><div><h2 id="policy-title" class="font-bold text-white">Owner 制定模拟政策</h2><p class="text-xs text-[#94a3b8]">应用后立即重置本地会话。Fuji 已部署合约的预算与单笔上限不可在线修改，链上测试请到链上演示页。</p></div><div class="flex gap-2"><button data-preset="conservative" class="text-xs border border-[#1f3a4d] rounded px-2 py-1">保守</button><button data-preset="relaxed" class="text-xs border border-[#1f3a4d] rounded px-2 py-1">宽松</button><button data-preset="locked" class="text-xs border border-[#1f3a4d] rounded px-2 py-1">锁定</button></div></div>
 <div class="grid md:grid-cols-3 gap-2 text-xs"><label>会话预算（演示单位）<input id="policy-budget" type="number" min="0.01" step="0.01" class="block w-full mt-1 p-2 rounded bg-[#07111d] border border-[#1f3a4d] text-white" value="10"></label><label>单笔上限（演示单位）<input id="policy-limit" type="number" min="0.01" step="0.01" class="block w-full mt-1 p-2 rounded bg-[#07111d] border border-[#1f3a4d] text-white" value="3"></label><label>商户白名单（逗号分隔，可增删）<input id="policy-merchants" class="block w-full mt-1 p-2 rounded bg-[#07111d] border border-[#1f3a4d] text-white" value="weather.lab"></label></div>
 <div class="flex flex-wrap items-center gap-3"><button id="apply-policy" class="bg-[#38bdf8] text-[#07111d] font-bold rounded px-3 py-2">应用模拟政策</button><span id="policy-error" role="status" class="text-xs text-[#94a3b8]"></span></div>
@@ -183,7 +197,7 @@
 <!-- 下半部分：左侧 2×2 测试按钮网格 + 右侧审计与交易日志 -->
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch">
 <!-- 左侧：2×2 测试网格 (占用 6 栏) -->
-<div class="lg:col-span-6 flex flex-col gap-2">
+<div id="test-operations" class="lg:col-span-6 flex flex-col gap-2 scroll-mt-20">
 <div class="flex items-center justify-between px-0.5 text-xs">
 <span class="font-bold text-slate-200 flex items-center gap-1.5">
 <span class="material-symbols-outlined text-[15px] text-[#38bdf8]">science</span>
@@ -191,6 +205,8 @@
         </span>
 <span class="font-mono text-[11px] text-[#94a3b8]">2×2 向量测试</span>
 </div>
+<p class="text-xs text-[#94a3b8]">下面四张卡片都是可点击按钮。先点「01 正常付款」；每次结果会立即显示在这里。</p>
+<p id="test-result" role="status" aria-live="polite" class="rounded border border-[#1f3a4d] bg-[#07111d] px-3 py-2 text-sm text-slate-200">尚未测试。点击下方按钮开始；这只是本地模拟，不会扣真实 AVAX。</p>
 <div class="grid grid-cols-2 gap-2.5">
 <!-- 按钮 1: 正常付款 -->
 <button class="test-btn group bg-[#0f1f2d] hover:bg-[#14283b] border border-[#4ade80]/50 hover:border-[#4ade80] p-2.5 rounded text-left transition-all active:scale-[0.98] flex flex-col justify-between gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#4ade80]/50 shadow-sm" id="btn-normal">
@@ -206,7 +222,7 @@
 </div>
 <div class="font-mono text-[10px] text-[#4ade80] pt-1 border-t border-[#1f3a4d]/60 flex items-center justify-between">
 <span class="vector-merchant">weather.lab</span>
-<span>预期: 放款成功</span>
+<span>点击测试 · 预期放款</span>
 </div>
 </button>
 <!-- 按钮 2: 超出限额 -->
@@ -223,7 +239,7 @@
 </div>
 <div class="font-mono text-[10px] text-[#fb7185] pt-1 border-t border-[#1f3a4d]/60 flex items-center justify-between">
 <span class="vector-comparison">4.00 &gt; 3.00</span>
-<span>预期: 超额回滚</span>
+<span>点击测试 · 预期拦截</span>
 </div>
 </button>
 <!-- 按钮 3: 非白名单商户 -->
@@ -240,7 +256,7 @@
 </div>
 <div class="font-mono text-[10px] text-[#fb7185] pt-1 border-t border-[#1f3a4d]/60 flex items-center justify-between">
 <span class="vector-unknown-merchant">unverified.service</span>
-<span>预期: 商户拦截</span>
+<span>点击测试 · 预期拦截</span>
 </div>
 </button>
 <!-- 按钮 4: 重复订单 (初始 disabled) -->
@@ -257,7 +273,7 @@
 </div>
 <div class="font-mono text-[10px] text-[#94a3b8] pt-1 border-t border-[#1f3a4d]/60 flex items-center justify-between" id="replay-footer">
 <span id="replay-target-text">无历史订单</span>
-<span class="text-[#fb7185]">预期: 防重放回滚</span>
+<span class="text-[#fb7185]">点击测试 · 预期拦截</span>
 </div>
 </button>
 </div>
