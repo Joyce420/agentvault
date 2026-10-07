@@ -27,15 +27,22 @@ Fuji C-Chain 适合测试小额支付，具备快速确认和较低手续费。x
 
 ## 快速演示
 
-1. 打开 [Demo](https://agentvault-joyce420-demo.onrender.com/)，应用「保守」预设，点 01/02/03/04；04 需要先有一笔成功订单。
-2. 将单笔上限改为 1 并应用，再用固定金额 2 向 `weather.lab` 付款，观察拦截；若将 `weather.lab` 移出白名单，同样的请求也会被拦截。
-3. 打开 [Live](https://agentvault-joyce420-demo.onrender.com/live.html) 连接 Fuji 钱包，读取真实合约规则。链上成功付款需钱包确认；失败场景只做预检查，不会产生失败交易。
-4. [Agent 购买页](https://agentvault-joyce420-demo.onrender.com/agent.html)可选择三种任务，获取报价；授权 Agent 钱包确认 Fuji 付款后领取服务结果。[Deploy](https://agentvault-joyce420-demo.onrender.com/deploy.html)可部署自己的合约。
+1. 打开 [首页模拟](https://agentvault-joyce420-demo.onrender.com/)：选「保守」并应用，点「模拟 Agent 申请支付」，看到放行和余额变化；再点 02/03/04 看拦截。首页的数值是演示单位，不转真实资金。
+2. 将单笔上限从 3 改为 1 并应用，再用请求金额 2 点击同一按钮，看到超限拦截且余额不变。
+3. 打开 [Agent 购买页](https://agentvault-joyce420-demo.onrender.com/agent.html)：选择任务，查看服务报价和合约预检查；用已授权的钱包在 Fuji 确认测试 AVAX 付款后，服务端验链并返回结果。天气是固定样例。
+4. 打开 [Fuji 链上页](https://agentvault-joyce420-demo.onrender.com/live.html) 读取真实合约规则和交易记录。链上成功付款需钱包确认；失败场景先做预检查，不发送失败交易。[部署页](https://agentvault-joyce420-demo.onrender.com/deploy.html)可部署自己的合约。
+
+## 结构
+
+`用户任务 → 规则驱动 Agent 选服务 → HTTP 402 风格报价 → Fuji AgentVault 合约检查预算、单笔上限、白名单与订单 → 用户钱包确认 → 服务端验链并交付结果`。
+
+首页独立提供规则模拟，方便无钱包的评委观察放行和拦截；其政策不修改已部署的 Fuji 合约。生产服务当前使用测试 AVAX，完整 x402 facilitator 与 AI 模型推理尚未接入。
 
 ## 链接
 
 - [Demo](https://agentvault-joyce420-demo.onrender.com/) · [Live](https://agentvault-joyce420-demo.onrender.com/live.html) · [Deploy](https://agentvault-joyce420-demo.onrender.com/deploy.html) · [Agent](https://agentvault-joyce420-demo.onrender.com/agent.html)
 - Fuji 合约：`0x7fb5fcE5542dB70030d6d77788d3a46d2be9C27D` · [Fuji 浏览器](https://explorer-test.avax.network/c-chain/address/0x7fb5fcE5542dB70030d6d77788d3a46d2be9C27D)
+- 评委用项目介绍与录屏顺序：[SUBMISSION.md](SUBMISSION.md)
 
 ## 技术栈与启动
 

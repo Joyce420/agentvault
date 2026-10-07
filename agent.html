@@ -11,8 +11,13 @@
       <header>
         <p class="text-secondary font-mono text-xs">AVALANCHE FUJI · RULE-DRIVEN AGENT</p>
         <h1 class="text-3xl font-bold mt-2">输入任务，让 Agent 获取服务</h1>
-        <p class="text-on-surface-variant mt-3">一个无需模型密钥的确定性 Agent：自动读取服务的付款要求、核对保险箱规则，并在你确认钱包交易后领取数据。服务端会核验真实 Fuji 交易。</p>
+        <p class="text-on-surface-variant mt-3">输入任务后，规则驱动的 Agent 选择服务并取得报价；AgentVault 检查 Fuji 合约规则。通过后由你在钱包确认测试 AVAX 付款，服务端验链后交付结果。</p>
+        <p class="mt-2 text-sm text-secondary font-semibold">真实 Fuji 测试网付款 · 使用测试 AVAX · 钱包由你确认</p>
       </header>
+      <section class="border border-outline rounded-lg p-4 bg-surface-container-low" aria-label="购买流程">
+        <h2 class="font-semibold">这页会发生什么</h2>
+        <p class="mt-2 text-sm text-on-surface-variant">① 你输入任务 → ② Agent 选服务并获取报价 → ③ AgentVault 预检查预算、单笔上限和商户 → ④ 你在钱包确认付款 → ⑤ 服务端验链并返回结果。预检查未通过时不会发起交易。</p>
+      </section>
       <section class="border border-outline rounded-lg p-5 space-y-4 bg-surface-container-low">
         <h2 class="text-xl font-semibold">任务</h2>
         <label class="block text-sm">你想做什么？
@@ -23,13 +28,13 @@
         <label class="block text-sm">任务内容（文本统计或 JSON 检查时填写）
           <textarea id="content" maxlength="10000" rows="5" placeholder="粘贴要处理的文本或 JSON；不要输入密码、私钥等敏感内容。" class="mt-1 block w-full bg-surface-container rounded border border-outline p-3"></textarea>
         </label>
-        <p id="quote" class="text-secondary text-sm" aria-live="polite">先输入任务，检查后展示服务与报价。所有付款使用免费 Fuji 测试币。</p>
+        <p id="quote" class="text-secondary text-sm" aria-live="polite">先输入任务或点一个样例，再检查服务与报价。所有付款使用 Fuji 测试 AVAX。</p>
         <label class="block text-sm">Fuji 合约地址
           <input id="address" placeholder="0x..." class="mt-1 block w-full bg-surface-container rounded border border-outline p-2 text-on-surface font-mono text-xs" />
         </label>
         <div class="flex flex-wrap gap-3">
-          <button id="plan" class="bg-primary text-on-primary rounded px-4 py-2 font-semibold">让 Agent 检查购买请求</button>
-          <button id="pay" disabled class="bg-secondary text-on-secondary rounded px-4 py-2 font-semibold disabled:opacity-40">确认付款并领取数据</button>
+          <button id="plan" class="bg-primary text-on-primary rounded px-4 py-2 font-semibold hover:opacity-85 focus:outline focus:outline-2 focus:outline-white disabled:opacity-40">① 获取报价并检查规则</button>
+          <button id="pay" disabled class="bg-secondary text-on-secondary rounded px-4 py-2 font-semibold hover:opacity-85 focus:outline focus:outline-2 focus:outline-white disabled:opacity-40">② 在钱包确认付款</button>
         </div>
         <p class="text-xs text-on-surface-variant">付款按钮会打开 MetaMask，由你亲自确认；Agent 无法读取你的私钥。仅限 Fuji 测试 AVAX。</p>
       </section>

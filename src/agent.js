@@ -36,6 +36,7 @@ async function plan() {
   $('plan').disabled = true;
   for (const key of ['task', 'content', 'address']) $(key).disabled = true;
   try {
+    step(`收到用户任务：${$('task').value.trim() || '未填写'}`);
     const vault = getAddress($('address').value.trim());
     step('Agent 根据你的任务选择服务。');
     const response = await fetch('/api/task', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ task: $('task').value, content: $('content').value }) });
@@ -60,10 +61,10 @@ async function plan() {
     }
     const orderId = quote.orderId;
     await contract.pay.staticCall(orderId, merchant, amount);
-    step(`合约预检查通过，剩余预算 ${formatEther(remaining)} 测试 AVAX。等待你在钱包中确认付款。`);
+    step(`AgentVault 合约规则预检查通过：商户在白名单内，价格未超过单笔上限及剩余预算 ${formatEther(remaining)} 测试 AVAX。等待你在钱包中确认付款。`);
     context = { contract, orderId, merchant, amount, vault, account };
     $('pay').disabled = false;
-  } catch (error) { step(`停止购买：${error.shortMessage || error.message}`); }
+  } catch (error) { step(`已停止，未发起付款交易：${error.shortMessage || error.message}`); }
   finally { $('plan').disabled = false; for (const key of ['task', 'content', 'address']) $(key).disabled = false; }
 }
 
@@ -91,7 +92,7 @@ async function pay() {
     const body = await response.json();
     if (!response.ok) throw new Error(`付款已成功，但服务端未交付：${body.error || response.status}`);
     $('result').textContent = JSON.stringify(body.data, null, 2);
-    step('服务端验证了 Paid 事件、收款商户、金额和订单编号，已交付数据。');
+    step('服务端验证了 Paid 事件、收款商户、金额和订单编号，已返回服务结果。');
   } catch (error) { step(error.shortMessage || error.message); }
   finally { context = null; purchasing = false; $('plan').disabled = false; for (const key of ['task', 'content', 'address']) $(key).disabled = false; }
 }
@@ -111,5 +112,5 @@ for (const button of document.querySelectorAll('.sample')) button.addEventListen
   };
   [$('task').value, $('content').value] = samples[button.dataset.sample];
   reset();
-  $('quote').textContent = '样例已填入。点击“让 Agent 检查购买请求”获取报价。';
+  $('quote').textContent = '样例已填入。点击“① 获取报价并检查规则”继续。';
 });
