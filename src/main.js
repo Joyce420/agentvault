@@ -1,144 +1,96 @@
-import './generated.css';
+import './console.css';
 import { PRESETS, validatePolicy, checkPayment } from './policy.js';
-
 const $ = id => document.getElementById(id);
 const money = value => value.toFixed(2);
-let policy = validatePolicy(PRESETS.conservative);
-let remaining = policy.budget;
-let lastOrder = null;
-let orderCount = 2041;
+let policy = validatePolicy(PRESETS.conservative), remaining = policy.budget, lastOrder = null, orderCount = 2041;
 const paid = new Set();
-
-function line(result, amount, merchant, orderId, reason) {
-  const row = document.createElement('p');
-  row.className = `font-mono text-xs break-all py-2 border-b border-[#1f3a4d] ${result === 'ALLOW' ? 'text-[#4ade80]' : result === 'REVERT' ? 'text-[#fb7185]' : 'text-[#38bdf8]'}`;
-  row.textContent = `[${new Date().toLocaleTimeString('zh-CN', { hour12: false })}] ${result} ${amount} ${merchant} ${orderId} ${reason}`;
-  if ($('audit-empty-state')) $('audit-empty-state').remove();
-  $('audit-log-container').prepend(row);
-}
-function setText(selector, text) {
-  const element = document.querySelector(selector);
-  if (element) element.textContent = text;
-}
-function showFixedResult(message, allowed) {
-  const result = $('fixed-result');
-  result.textContent = message;
-  result.className = `rounded border px-3 py-2 text-sm font-semibold ${allowed ? 'border-[#4ade80] bg-[#4ade80]/10 text-[#4ade80]' : 'border-[#fb7185] bg-[#fb7185]/10 text-[#fb7185]'}`;
-}
-function showTestResult(message, allowed) {
-  const result = $('test-result');
-  result.textContent = message;
-  result.className = `rounded border px-3 py-2 text-sm font-semibold ${allowed ? 'border-[#4ade80] bg-[#4ade80]/10 text-[#4ade80]' : 'border-[#fb7185] bg-[#fb7185]/10 text-[#fb7185]'}`;
-}
 function render() {
-  $('stat-vault').textContent = money(remaining);
   $('stat-budget').textContent = money(remaining);
   $('stat-limit').textContent = money(policy.perTx);
-  $('current-merchants').textContent = policy.merchants.join(', ');
-  $('gate-limit').textContent = `≤ ${money(policy.perTx)} 演示单位`;
-  $('gate-merchants').textContent = `仅限白名单商户 (${policy.merchants.join(', ')})`;
-  $('merchant-name').textContent = policy.merchants[0];
-  const normal = Math.min(Math.round(policy.perTx * 60) / 100, remaining);
-  const over = policy.perTx + 1;
-  const unknown = Math.min(Math.round(policy.perTx * 50) / 100, remaining);
-  document.querySelector('.vector-unknown-merchant').textContent = unknownMerchant();
-  setText('#btn-normal .vector-amount', `${money(normal)} 单位`);
-  setText('#btn-normal .vector-description', `金额 ${money(normal)}，当前白名单商户，预期放款`);
-  setText('#btn-normal .vector-merchant', policy.merchants[0]);
-  setText('#btn-overcap .vector-amount', `${money(over)} 单位`);
-  setText('#btn-overcap .vector-description', `${money(over)} > ${money(policy.perTx)}，预期拦截`);
-  setText('#btn-overcap .vector-comparison', `${money(over)} > ${money(policy.perTx)}`);
-  setText('#btn-unknown .vector-amount', `${money(unknown)} 单位`);
-  $('replay-order-tag').textContent = lastOrder?.orderId || '需先有成功订单';
-  $('replay-target-text').textContent = lastOrder ? `重放 ${lastOrder.orderId}` : '无历史订单';
-  $('btn-replay').disabled = false;
+  $('stat-spent').textContent = money(policy.budget - remaining);
+  $('total-budget').textContent = money(policy.budget);
+  $('paid-count').textContent = paid.size;
+  $('budget-progress').max = policy.budget;
+  $('budget-progress').value = remaining;
+  $('normal-hint').textContent = remaining > 0 ? `${money(normalAmount())} → ${policy.merchants[0]}` : '预算已用完，请重置';
+  $('over-hint').textContent = `${money(policy.perTx + 1)} > 上限 ${money(policy.perTx)}`;
+  $('replay-hint').textContent = lastOrder ? lastOrder.orderId : '需先完成一笔付款';
 }
-function run(amount, merchant, orderId, showNearButton = false) {
-  if (!showNearButton) {
-    $('fixed-result').className = 'hidden rounded border px-3 py-2 text-sm font-semibold';
-    $('fixed-result').textContent = '';
+function log(allowed, message, detail = '') {
+  const time = new Date().toLocaleTimeString('zh-CN', {hour12:false});
+  $('latest-event').textContent = `${time} · ${message}`;
+  $('audit-log').querySelector('.empty')?.remove();
+  const row = document.createElement('p');
+  row.className = allowed === null ? '' : allowed ? 'allow' : 'deny';
+  row.textContent = `${time} · ${message}${detail ? ` · ${detail}` : ''}`;
+  $('audit-log').prepend(row);
+  while ($('audit-log').children.length > 50) $('audit-log').lastElementChild.remove();
+}
+function select(name) {
+  for (const button of document.querySelectorAll('[data-case]')) button.setAttribute('aria-pressed', String(button.dataset.case === name));
+}
+function decision(state, title, detail) {
+  $('pipeline').dataset.state = state;
+  $('decision-icon').textContent = state === 'allow' ? '✓' : state === 'deny' ? '✕' : '◇';
+  $('decision-title').textContent = title;
+  $('decision-detail').textContent = detail;
+  $('outbound-symbol').textContent = state === 'deny' ? '⊘' : '→';
+}
+function ruleStates(values = {}) {
+  for (const name of ['merchant','limit','budget','order']) {
+    const element = $(`rule-${name}`), result = values[name];
+    element.className = result === undefined ? '' : result ? 'pass' : 'fail';
+    element.querySelector('b').textContent = result === undefined ? '—' : result ? '✓' : '✕';
   }
-  const reason = checkPayment({ amount, merchant, orderId }, policy, remaining, paid);
-  $('node-agent-intent').textContent = `${money(amount)} → ${merchant}`;
-  $('gate-banner').textContent = reason ? `模拟拦截：${reason}` : '模拟规则检查通过';
-  $('wire-status-text').textContent = reason ? 'REVERT · 模拟判定' : 'ALLOW · 模拟判定';
-  $('merchant-status-badge').textContent = reason ? '未收到款项' : '模拟收款成功';
-  $('feedback-text').textContent = reason ? `${reason}；没有扣除演示额度` : `通过当前模拟政策，扣除 ${money(amount)} 演示单位`;
-  if (!reason) {
-    remaining = Math.round((remaining - amount) * 100) / 100;
-    paid.add(orderId);
-    lastOrder = { amount, merchant, orderId };
-  }
-  if (showNearButton) showFixedResult(reason
-    ? `模拟付款被拦截：${reason}。未扣额度，剩余 ${money(remaining)}。`
-    : `模拟付款已允许：扣除 ${money(amount)}，剩余 ${money(remaining)}。`, !reason);
-  showTestResult(reason
-    ? `已拦截：${money(amount)} → ${merchant}。原因：${reason}；余额未扣，剩余 ${money(remaining)} 演示单位。`
-    : `已放行：${money(amount)} → ${merchant}。扣除后剩余 ${money(remaining)} 演示单位。`, !reason);
-  line(reason ? 'REVERT' : 'ALLOW', money(amount), merchant, orderId, reason || '当前政策通过');
+}
+function run(amount, merchant, orderId) {
+  const reason = checkPayment({amount,merchant,orderId}, policy, remaining, paid);
+  ruleStates({merchant:policy.merchants.includes(merchant),limit:amount <= policy.perTx,budget:amount > 0 && amount <= remaining,order:!paid.has(orderId)});
+  $('request-amount').textContent = money(amount);
+  $('request-merchant').textContent = merchant;
+  $('merchant-name').textContent = merchant;
+  if (!reason) { remaining = Math.round((remaining - amount)*100)/100; paid.add(orderId); lastOrder = {amount,merchant,orderId}; }
+  const description = reason === '超过单笔上限' ? `${money(amount)} 超过单笔上限 ${money(policy.perTx)}` : reason;
+  decision(reason ? 'deny' : 'allow', reason ? `已拦截：${description}` : `付款通过：${money(amount)} 模拟额度`, reason ? `未扣款 · 剩余预算 ${money(remaining)}` : `已扣除 ${money(amount)} · 剩余预算 ${money(remaining)}`);
+  $('merchant-status').textContent = reason ? '未执行' : '模拟收款成功';
+  log(!reason, reason ? `已拦截：${description}` : `已放行：${money(amount)}`, `${merchant} · ${orderId} · 剩余 ${money(remaining)}`);
   render();
 }
-function nextOrder() { return `order_${orderCount++}`; }
-function unknownMerchant() {
-  let merchant = 'unverified.service';
-  let suffix = 2;
-  while (policy.merchants.includes(merchant)) merchant = `unverified-${suffix++}.service`;
-  return merchant;
-}
-$('btn-normal').addEventListener('click', () => run(Math.min(Math.round(policy.perTx * 60) / 100, remaining), policy.merchants[0], nextOrder()));
-$('btn-overcap').addEventListener('click', () => run(policy.perTx + 1, policy.merchants[0], nextOrder()));
-$('btn-unknown').addEventListener('click', () => {
-  const merchant = unknownMerchant();
-  run(Math.min(Math.round(policy.perTx * 50) / 100, remaining), merchant, nextOrder());
+const normalAmount = () => Math.min(Math.round(policy.perTx * 60)/100, remaining);
+const nextOrder = () => `order_${orderCount++}`;
+function unknownMerchant() { let name='unverified.service', i=2; while(policy.merchants.includes(name)) name=`unverified-${i++}.service`; return name; }
+$('btn-normal').addEventListener('click',()=>{select('normal');run(normalAmount(),policy.merchants[0],nextOrder());});
+$('btn-overcap').addEventListener('click',()=>{select('overcap');run(policy.perTx+1,policy.merchants[0],nextOrder());});
+$('btn-unknown').addEventListener('click',()=>{select('unknown');run(Math.min(Math.round(policy.perTx*50)/100,remaining),unknownMerchant(),nextOrder());});
+$('btn-replay').addEventListener('click',()=>{
+  select('replay');
+  if(lastOrder) return run(lastOrder.amount,lastOrder.merchant,lastOrder.orderId);
+  ruleStates(); $('request-amount').textContent='—'; $('request-merchant').textContent='尚无成功订单'; $('merchant-status').textContent='未执行';
+  decision('idle','还没有可重放的订单','请先点击「正常付款」，再测试重复订单。未扣款。');
+  log(false,'未发起请求：需先有成功订单');
 });
-$('btn-replay').addEventListener('click', () => {
-  if (!lastOrder) {
-    showTestResult('还没有可重放的订单。请先点击「01 正常付款」完成一笔，再点「04 重复订单」。', false);
-    return line('REVERT', '—', '—', '—', '需先有成功订单');
-  }
-  run(lastOrder.amount, lastOrder.merchant, lastOrder.orderId);
-});
-$('btn-fixed').addEventListener('click', () => {
-  const amount = Number($('fixed-amount').value);
-  if (!Number.isFinite(amount) || amount <= 0 || Math.abs(amount * 100 - Math.round(amount * 100)) > 1e-7) {
-    showFixedResult('请输入大于零、最多两位小数的金额；未发起模拟付款。', false);
-    return line('REVERT', '—', 'weather.lab', '—', '请输入大于零、最多两位小数的金额');
-  }
-  run(amount, 'weather.lab', nextOrder(), true);
-});
-function resetSession() {
-  remaining = policy.budget;
-  paid.clear(); lastOrder = null; orderCount = 2041;
-  $('gate-banner').textContent = '等待付款请求';
-  $('wire-status-text').textContent = '等待付款请求';
-  $('node-agent-intent').textContent = '空闲中';
-  $('merchant-status-badge').textContent = '等待中';
-  $('feedback-text').textContent = '选择测试操作以检查当前模拟政策';
-  $('test-result').textContent = '尚未测试。点击下方按钮开始；这只是本地模拟，不会扣真实 AVAX。';
-  $('test-result').className = 'rounded border border-[#1f3a4d] bg-[#07111d] px-3 py-2 text-sm text-slate-200';
-  $('fixed-result').className = 'hidden rounded border px-3 py-2 text-sm font-semibold';
-  $('fixed-result').textContent = '';
+function reset() {
+  remaining=policy.budget; paid.clear();lastOrder=null;orderCount=2041;
+  select('');ruleStates();decision('idle','等待付款请求','先试正常付款，再看看规则如何拦截。');
+  $('request-amount').textContent='—';$('request-merchant').textContent='选择下方场景开始';$('merchant-name').textContent=policy.merchants[0];$('merchant-status').textContent='等待中';
   render();
 }
-$('btn-reset').addEventListener('click', () => { resetSession(); line('SESSION_RESET', '—', '—', '—', '模拟会话已重置'); });
-function syncForm() {
-  $('policy-budget').value = policy.budget;
-  $('policy-limit').value = policy.perTx;
-  $('policy-merchants').value = policy.merchants.join(', ');
-}
-for (const button of document.querySelectorAll('[data-preset]')) button.addEventListener('click', () => {
-  const selected = PRESETS[button.dataset.preset];
-  $('policy-budget').value = selected.budget;
-  $('policy-limit').value = selected.perTx;
-  $('policy-merchants').value = selected.merchants.join(', ');
-  $('policy-error').textContent = '预设已填入；点击“应用模拟政策”才会生效。';
+$('btn-reset').addEventListener('click',()=>{reset();log(null,'会话已重置');});
+for(const button of document.querySelectorAll('[data-preset]')) button.addEventListener('click',()=>{
+  const p=PRESETS[button.dataset.preset];$('policy-budget').value=p.budget;$('policy-limit').value=p.perTx;$('policy-merchants').value=p.merchants.join(', ');
+  $('policy-error').className='';$('policy-error').textContent='预设已填入，点击“应用规则”后生效。';
 });
-$('apply-policy').addEventListener('click', () => {
+$('policy-form').addEventListener('submit',event=>{
+  event.preventDefault();
   try {
-    const next = validatePolicy({ budget: $('policy-budget').value, perTx: $('policy-limit').value, merchants: $('policy-merchants').value.split(',') });
-    policy = next; resetSession();
-    $('policy-error').textContent = '模拟政策已生效；不会修改 Fuji 合约。';
-    line('POLICY_UPDATED', `budget=${money(policy.budget)}`, `perTx=${money(policy.perTx)}`, `merchants=${policy.merchants.join(',')}`, '模拟政策已更新');
-  } catch (error) { $('policy-error').textContent = `未应用：${error.message}`; }
+    policy=validatePolicy({budget:$('policy-budget').value,perTx:$('policy-limit').value,merchants:$('policy-merchants').value.split(',')});
+    reset();$('policy-error').className='';$('policy-error').textContent='模拟规则已生效，会话已重置。不会修改 Fuji 链上合约。';
+    log(null,'规则已更新',`预算 ${money(policy.budget)} · 上限 ${money(policy.perTx)} · 商户 ${policy.merchants.join(', ')}`);
+  }catch(error){$('policy-error').className='error';$('policy-error').textContent=`未应用：${error.message}`;}
 });
-syncForm(); render();
+$('fixed-form').addEventListener('submit',event=>{
+  event.preventDefault();const amount=Number($('fixed-amount').value);select('');
+  if(!Number.isFinite(amount)||amount<=0||Math.abs(amount*100-Math.round(amount*100))>1e-7){decision('idle','请输入有效金额','金额须大于零且最多两位小数，未发起请求。');return;}
+  run(amount,'weather.lab',nextOrder());
+});
+reset();
