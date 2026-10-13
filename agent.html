@@ -11,7 +11,7 @@
       <header>
         <p class="text-secondary font-mono text-xs">AVALANCHE FUJI · RULE-DRIVEN AGENT</p>
         <h1 class="text-3xl font-bold mt-2">输入任务，让 Agent 获取服务</h1>
-        <p class="text-on-surface-variant mt-3">输入任务后，规则驱动的 Agent 选择服务并取得报价；AgentVault 检查 Fuji 合约规则。通过后由你在钱包确认测试 AVAX 付款，服务端验链后交付结果。</p>
+        <p class="text-on-surface-variant mt-3">输入任务后，规则驱动的 Agent 根据任务匹配服务并取得报价；AgentVault 检查 Fuji 合约规则。通过后由你在钱包确认测试 AVAX 付款，服务端验链后交付结果。</p>
         <p class="mt-2 text-sm text-secondary font-semibold">真实 Fuji 测试网付款 · 使用测试 AVAX · 钱包由你确认</p>
       </header>
       <section class="border border-outline rounded-lg p-4 bg-surface-container-low" aria-label="购买流程">
@@ -23,15 +23,16 @@
         <label class="block text-sm">你想做什么？
           <input id="task" maxlength="500" placeholder="例如：帮我统计这段文本的字数" class="mt-1 block w-full bg-surface-container rounded border border-outline p-3" />
         </label>
-        <p class="text-sm text-on-surface-variant">目前支持：上海天气样例、文本统计、JSON 格式检查。按关键词选择服务，暂不支持任意问题问答。</p>
+        <p class="text-sm text-on-surface-variant">支持三类服务：文本统计、JSON 检查和上海天气固定样例。下方示例可以修改，文本和 JSON 内容由你填写；暂不支持通用 AI 问答。</p>
         <div class="flex flex-wrap gap-2 text-xs"><button type="button" data-sample="weather" class="sample border border-outline rounded px-2 py-1">查询上海天气</button><button type="button" data-sample="text" class="sample border border-outline rounded px-2 py-1">统计文本字数</button><button type="button" data-sample="json" class="sample border border-outline rounded px-2 py-1">检查 JSON 是否合法</button></div>
-        <label class="block text-sm">任务内容（文本统计或 JSON 检查时填写）
+        <label class="block text-sm">补充内容（需要处理的文本或 JSON，可自行填写）
           <textarea id="content" maxlength="10000" rows="5" placeholder="粘贴要处理的文本或 JSON；不要输入密码、私钥等敏感内容。" class="mt-1 block w-full bg-surface-container rounded border border-outline p-3"></textarea>
         </label>
         <p id="quote" class="text-secondary text-sm" aria-live="polite">先输入任务或点一个样例，再检查服务与报价。所有付款使用 Fuji 测试 AVAX。</p>
-        <label class="block text-sm">Fuji 合约地址
-          <input id="address" placeholder="0x..." class="mt-1 block w-full bg-surface-container rounded border border-outline p-2 text-on-surface font-mono text-xs" />
+        <details><summary class="text-sm text-primary cursor-pointer">合约信息与规则设置</summary><p class="text-xs text-on-surface-variant my-2">购买使用服务端指定的金库。设置自己的预算和单笔上限，可部署新金库；接入购买服务还需管理员更新服务配置。</p><a href="/deploy.html" class="text-primary underline text-sm">设置自己的链上规则 →</a><label class="block text-sm mt-2">Fuji 合约地址
+          <input id="address" readonly placeholder="0x..." class="mt-1 block w-full bg-surface-container rounded border border-outline p-2 text-on-surface font-mono text-xs" />
         </label>
+        </details>
         <div class="flex flex-wrap gap-3">
           <button id="plan" class="bg-primary text-on-primary rounded px-4 py-2 font-semibold hover:opacity-85 focus:outline focus:outline-2 focus:outline-white disabled:opacity-40">① 获取报价并检查规则</button>
           <button id="pay" disabled class="bg-secondary text-on-secondary rounded px-4 py-2 font-semibold hover:opacity-85 focus:outline focus:outline-2 focus:outline-white disabled:opacity-40">② 在钱包确认付款</button>
@@ -45,7 +46,11 @@
       </section>
       <section class="border border-outline rounded-lg p-5 space-y-3 bg-surface-container-low" aria-live="polite">
         <h2 class="text-xl font-semibold">服务交付</h2>
-        <pre id="result" class="whitespace-pre-wrap text-sm text-on-surface-variant">付款并通过链上验证后显示数据。</pre>
+        <div id="result-summary" class="space-y-3" hidden></div>
+        <details id="raw-result"><summary class="text-sm text-on-surface-variant cursor-pointer">查看原始数据</summary><pre id="result" class="whitespace-pre-wrap text-sm text-on-surface-variant">付款并通过链上验证后显示数据。</pre></details>
+        <button id="retry" hidden class="border border-outline rounded px-4 py-2 text-primary">重试领取结果（不再付款）</button>
+        <p class="text-xs text-on-surface-variant">订单保留一小时；演示服务器重启会清空订单。付款后请保存交易记录和结果。</p>
+        <p id="delivery-state" class="text-sm text-on-surface-variant">尚未购买服务。</p>
       </section>
       <p class="text-xs text-on-surface-variant">本项目实现可配置模拟政策与 Fuji 链上规则金库（预算 / 单笔上限 / 白名单 / 防重放）。请求形态对齐 HTTP 402 / x402，完整协议与 facilitator 接入列为下一步。天气是固定样例，不是实时预报。</p>
     </main>

@@ -11,6 +11,10 @@ export function createWeatherMiddleware(service = createWeatherService()) {
   const jobs = new Map();
   return async (req, res, next) => {
     const url = new URL(req.url || '/', 'http://localhost');
+    if (url.pathname === '/api/capabilities') {
+      if (req.method !== 'GET') return send(res, 405, { error: '只支持 GET' });
+      return send(res, 200, { vault: service.vault });
+    }
     if (url.pathname === '/api/task') {
       if (req.method !== 'POST') return send(res, 405, { error: '只支持 POST' });
       try {
@@ -25,12 +29,22 @@ export function createWeatherMiddleware(service = createWeatherService()) {
         if (input.tx) {
           const job = jobs.get(input.order);
           if (!job) return send(res, 400, { error: '任务不存在或已过期，请勿再次付款，保留交易凭证。' });
-          await service.report(input.tx, input.order);
-          jobs.delete(input.order);
-          return send(res, 200, { data: executeTask(job) });
+          if (job.delivery) {
+            if (job.tx !== input.tx) return send(res, 400, { error: '交易与已交付订单不一致。' });
+            return send(res, 200, { data: job.delivery });
+          }
+          if (job.verifying) return send(res, 409, { error: '订单正在验证，请稍后重试领取，无需再次付款。' });
+          job.verifying = true;
+          try {
+            const data = executeTask(job);
+            await service.report(input.tx, input.order);
+            job.tx = input.tx;
+            job.delivery = data;
+            return send(res, 200, { data });
+          } finally { job.verifying = false; }
         }
-        const job = parseTask(input.task, input.content);
         if (jobs.size >= 1000) return send(res, 503, { error: '服务繁忙，请稍后再试。' });
+        const job = parseTask(input.task, input.content);
         const orderId = `0x${randomBytes(32).toString('hex')}`;
         jobs.set(orderId, { ...job, expires: now + 60 * 60 * 1000 });
         return send(res, 402, { chainId: 43113, asset: 'AVAX', amountWei: service.price, vault: service.vault, merchant: service.merchant, orderId, description: job.description, task: job.task });

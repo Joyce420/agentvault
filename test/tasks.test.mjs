@@ -30,5 +30,6 @@ test('task quote binds content to an order and does not deliver on failed verifi
   verified = true;
   const result = await request({ tx: 'confirmed', order, content: 'changed content' });
   assert.equal(result.data.data.characters, 3);
-  assert.equal((await request({ tx: 'confirmed', order })).status, 400);
+  assert.equal((await request({ tx: 'confirmed', order })).data.data.characters, 3);
+  assert.equal((await request({ tx: 'other', order })).status, 400);
 });
