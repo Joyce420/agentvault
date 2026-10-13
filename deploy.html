@@ -1,45 +1,14 @@
-<!doctype html>
-<html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AgentVault · Fuji 部署</title>
-  </head>
-  <body class="bg-surface text-on-surface font-body min-h-screen">
-    <main class="max-w-2xl mx-auto px-5 py-10 space-y-6">
-      <a href="/" class="text-primary text-sm">← 返回 AgentVault 演示</a>
-      <div>
-        <p class="text-secondary font-mono text-xs">AVALANCHE FUJI TESTNET</p>
-        <h1 class="text-3xl font-bold mt-2">部署你的 AgentVault</h1>
-        <p class="text-on-surface-variant mt-3">这个页面帮你部署合约并设置商户。所有签名都在你的浏览器钱包里完成；不要输入或发送私钥。</p>
-      </div>
-      <section class="border border-outline rounded-lg p-5 space-y-4 bg-surface-container-low">
-        <div class="flex flex-wrap gap-3 items-center">
-          <button id="connect" class="bg-primary text-on-primary rounded px-4 py-2 font-semibold">1. 连接钱包并切换 Fuji</button>
-          <span id="wallet" class="font-mono text-xs text-on-surface-variant">尚未连接</span>
-        </div>
-        <p class="text-sm">钱包里需要少量测试 AVAX，用于合约存款和两笔交易手续费。<a class="text-primary underline" target="_blank" rel="noopener noreferrer" href="https://build.avax.network/console/primary-network/faucet">打开 Avalanche 官方测试币水龙头</a></p>
-      </section>
-      <section class="border border-outline rounded-lg p-5 space-y-4 bg-surface-container-low">
-        <h2 class="text-xl font-semibold">2. 设置测试规则</h2>
-        <label class="block text-sm">合约存入及总预算（测试 AVAX）
-          <input id="budget" type="number" min="0.001" step="0.001" value="0.02" class="mt-1 block w-full bg-surface-container rounded border border-outline p-2 text-on-surface" />
-        </label>
-        <label class="block text-sm">单笔上限（测试 AVAX）
-          <input id="limit" type="number" min="0.0001" step="0.0001" value="0.005" class="mt-1 block w-full bg-surface-container rounded border border-outline p-2 text-on-surface" />
-        </label>
-        <label class="block text-sm">测试商户钱包地址
-          <input id="merchant" placeholder="0x...；留空时使用你自己的钱包地址" class="mt-1 block w-full bg-surface-container rounded border border-outline p-2 text-on-surface font-mono text-xs" />
-        </label>
-        <p class="text-xs text-on-surface-variant">演示可将同一钱包同时当作 owner 与 agent，方便单人测试。生产环境应拆成 owner / agent / merchant 三个地址。规则只应由 owner 修改；当前合约的预算和单笔上限部署后不可修改，变更须重新部署。</p>
-        <button id="deploy" disabled class="bg-secondary text-black rounded px-4 py-2 font-semibold disabled:opacity-40 disabled:cursor-not-allowed">3. 部署并授权商户</button>
-      </section>
-      <section class="border border-outline rounded-lg p-5 bg-surface-container-low space-y-2" aria-live="polite">
-        <h2 class="font-semibold">进度</h2>
-        <p id="status">等待连接钱包。</p>
-        <div id="result" class="text-sm break-all space-y-2"></div>
-      </section>
-    </main>
-    <script type="module" src="/src/deploy.js"></script>
-  </body>
-</html>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AgentVault · 部署金库</title></head><body class="console deployment"><header class="topbar"><a class="brand" href="/" aria-label="AgentVault 首页"><svg class="brand-logo" viewBox="0 0 50 54" aria-hidden="true"><path d="M25 2 47 15v25L25 53 3 40V15Z" fill="#1fa1ed"/><path d="m25 2 22 13-22 13L3 15Z" fill="#76ceff"/><path d="m25 28 22-13v25L25 53Z" fill="#0876c8"/><path d="m25 14 11 7v13l-11 7-11-7V21Z" fill="#062540"/><path d="m25 14 11 7-11 7-11-7Z" fill="#1b6ba5"/><path d="M25 28v13l-11-7V21Z" fill="#43baff"/></svg>AgentVault</a><nav aria-label="主导航"><a href="/">控制台</a><a href="/agent.html">服务购买</a><a href="/live.html">链上测试</a><a href="/deploy.html" aria-current="page">部署金库</a></nav><span class="simulation">▲ Fuji 测试网 · 测试 AVAX</span></header><main>
+<h1>创建你的规则金库</h1><p class="intro">先设定预算与收款商户，再由钱包确认部署。</p>
+<ol class="deploy-progress" aria-label="部署进度"><li class="active" data-stage="1"><b>1</b>连接钱包</li><li data-stage="2"><b>2</b>设置规则</li><li data-stage="3"><b>3</b>部署与授权</li></ol>
+<div class="deploy-layout"><section class="deploy-panel settings"><div class="settings-heading"><div><h2>设置支付边界</h2><p>设定预算、单笔上限与商户地址，控制 Agent 的付款范围。</p></div><div class="wallet-box"><button id="connect" class="secondary">连接钱包 · Fuji</button><span id="wallet">尚未连接</span></div></div>
+<label>总预算与初始存款（测试 AVAX）<div class="amount-input"><input id="budget" type="number" min="0.001" step="0.001" value="0.020"><span>测试 AVAX</span></div></label>
+<label>单笔付款上限（测试 AVAX）<div class="amount-input"><input id="limit" type="number" min="0.0001" step="0.0001" value="0.005"><span>测试 AVAX</span></div></label>
+<label>商户钱包地址<input id="merchant" placeholder="0x...；留空时使用当前钱包地址"></label>
+<p class="owner-note">♙ 本次使用当前钱包作为 Owner 与 Agent。</p><p class="rule-warning">！ 预算与单笔上限部署后不可修改；变更需要新建金库。</p><p id="validation" role="status"></p>
+<div class="deploy-actions"><button id="deploy" class="primary" disabled>部署金库 →</button><a target="_blank" rel="noopener noreferrer" href="https://build.avax.network/console/primary-network/faucet">领取 Fuji 测试币 ↗</a></div></section>
+<aside class="deploy-panel preview"><div class="preview-heading"><svg viewBox="0 0 100 110" aria-hidden="true"><defs><linearGradient id="safe" x2="1" y2="1"><stop stop-color="#bce5ff"/><stop offset=".5" stop-color="#487fa8"/><stop offset="1" stop-color="#11283f"/></linearGradient></defs><path d="m50 3 44 23v60l-44 22L6 85V26Z" fill="url(#safe)" stroke="#b4d8f4"/><path d="m50 15 32 17v46L50 96 18 78V33Z" fill="#183b57" stroke="#72acd6"/><circle cx="50" cy="56" r="20" fill="#0b2237" stroke="#aacfe9" stroke-width="4"/><path d="M50 39v34M33 56h34M38 44l24 24M38 68l24-24" stroke="#9fc9e9" stroke-width="3"/><circle cx="50" cy="56" r="6" fill="#a9d5f2"/></svg><div><h2>规则预览</h2><p>确认以下规则后，在钱包中确认交易。</p></div></div>
+<dl class="preview-rules" aria-live="polite"><div><dt>▱ 总预算与初始存款</dt><dd><strong id="preview-budget">0.020</strong> 测试 AVAX</dd></div><div><dt>▣ 单笔付款上限</dt><dd><strong id="preview-limit">0.005</strong> 测试 AVAX</dd></div><div><dt>♙ 白名单商户</dt><dd id="preview-merchant">当前钱包（待连接）</dd></div><div><dt>✓ 付款权限</dt><dd>仅授权 Agent 可付款</dd></div><div><dt>▤ 订单去重</dt><dd>重复订单将被拒绝</dd></div></dl>
+<div class="confirmations"><h3>⚙ 需要两次钱包确认</h3><p><b>1</b><span>部署合约并存入 <strong id="deposit-amount">0.020</strong> 测试 AVAX</span></p><p><b>2</b><span>授权商户</span></p><p class="fee-note">ⓘ 网络手续费另计。</p></div></aside></div>
+<section class="deployment-status" aria-live="polite"><strong>部署进度</strong><p id="status">等待连接钱包。</p><div id="result"></div></section>
+<footer>▤ 部署完成后可进入链上测试；接入服务购买还需配置服务端金库地址。<a href="/live.html">链上测试 →</a></footer></main><script type="module" src="/src/deploy.js"></script></body></html>
