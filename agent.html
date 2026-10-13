@@ -1,59 +1,9 @@
-<!doctype html>
-<html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AgentVault · Agent 购买服务</title>
-  </head>
-  <body class="bg-surface text-on-surface font-body min-h-screen">
-    <main class="max-w-3xl mx-auto px-5 py-10 space-y-6">
-      <nav class="flex flex-wrap gap-5 text-sm text-primary"><a href="/">模拟演示</a><a href="/live.html">链上付款</a><a href="/deploy.html">部署合约</a></nav>
-      <header>
-        <p class="text-secondary font-mono text-xs">AVALANCHE FUJI · RULE-DRIVEN AGENT</p>
-        <h1 class="text-3xl font-bold mt-2">输入任务，让 Agent 获取服务</h1>
-        <p class="text-on-surface-variant mt-3">输入任务后，规则驱动的 Agent 根据任务匹配服务并取得报价；AgentVault 检查 Fuji 合约规则。通过后由你在钱包确认测试 AVAX 付款，服务端验链后交付结果。</p>
-        <p class="mt-2 text-sm text-secondary font-semibold">真实 Fuji 测试网付款 · 使用测试 AVAX · 钱包由你确认</p>
-      </header>
-      <section class="border border-outline rounded-lg p-4 bg-surface-container-low" aria-label="购买流程">
-        <h2 class="font-semibold">这页会发生什么</h2>
-        <p class="mt-2 text-sm text-on-surface-variant">① 你输入任务 → ② Agent 选服务并获取报价 → ③ AgentVault 预检查预算、单笔上限和商户 → ④ 你在钱包确认付款 → ⑤ 服务端验链并返回结果。预检查未通过时不会发起交易。</p>
-      </section>
-      <section class="border border-outline rounded-lg p-5 space-y-4 bg-surface-container-low">
-        <h2 class="text-xl font-semibold">任务</h2>
-        <label class="block text-sm">你想做什么？
-          <input id="task" maxlength="500" placeholder="例如：帮我统计这段文本的字数" class="mt-1 block w-full bg-surface-container rounded border border-outline p-3" />
-        </label>
-        <p class="text-sm text-on-surface-variant">支持三类服务：文本统计、JSON 检查和上海天气固定样例。下方示例可以修改，文本和 JSON 内容由你填写；暂不支持通用 AI 问答。</p>
-        <div class="flex flex-wrap gap-2 text-xs"><button type="button" data-sample="weather" class="sample border border-outline rounded px-2 py-1">查询上海天气</button><button type="button" data-sample="text" class="sample border border-outline rounded px-2 py-1">统计文本字数</button><button type="button" data-sample="json" class="sample border border-outline rounded px-2 py-1">检查 JSON 是否合法</button></div>
-        <label class="block text-sm">补充内容（需要处理的文本或 JSON，可自行填写）
-          <textarea id="content" maxlength="10000" rows="5" placeholder="粘贴要处理的文本或 JSON；不要输入密码、私钥等敏感内容。" class="mt-1 block w-full bg-surface-container rounded border border-outline p-3"></textarea>
-        </label>
-        <p id="quote" class="text-secondary text-sm" aria-live="polite">先输入任务或点一个样例，再检查服务与报价。所有付款使用 Fuji 测试 AVAX。</p>
-        <details><summary class="text-sm text-primary cursor-pointer">合约信息与规则设置</summary><p class="text-xs text-on-surface-variant my-2">购买使用服务端指定的金库。设置自己的预算和单笔上限，可部署新金库；接入购买服务还需管理员更新服务配置。</p><a href="/deploy.html" class="text-primary underline text-sm">设置自己的链上规则 →</a><label class="block text-sm mt-2">Fuji 合约地址
-          <input id="address" readonly placeholder="0x..." class="mt-1 block w-full bg-surface-container rounded border border-outline p-2 text-on-surface font-mono text-xs" />
-        </label>
-        </details>
-        <div class="flex flex-wrap gap-3">
-          <button id="plan" class="bg-primary text-on-primary rounded px-4 py-2 font-semibold hover:opacity-85 focus:outline focus:outline-2 focus:outline-white disabled:opacity-40">① 获取报价并检查规则</button>
-          <button id="pay" disabled class="bg-secondary text-on-secondary rounded px-4 py-2 font-semibold hover:opacity-85 focus:outline focus:outline-2 focus:outline-white disabled:opacity-40">② 在钱包确认付款</button>
-        </div>
-        <p class="text-xs text-on-surface-variant">付款按钮会打开 MetaMask，由你亲自确认；Agent 无法读取你的私钥。仅限 Fuji 测试 AVAX。</p>
-      </section>
-      <section class="border border-outline rounded-lg p-5 space-y-3 bg-surface-container-low" aria-live="polite">
-        <h2 class="text-xl font-semibold">执行记录</h2>
-        <ol id="steps" class="space-y-2 text-sm list-decimal pl-5"><li>等待任务。</li></ol>
-        <div id="receipt" class="text-sm break-all"></div>
-      </section>
-      <section class="border border-outline rounded-lg p-5 space-y-3 bg-surface-container-low" aria-live="polite">
-        <h2 class="text-xl font-semibold">服务交付</h2>
-        <div id="result-summary" class="space-y-3" hidden></div>
-        <details id="raw-result"><summary class="text-sm text-on-surface-variant cursor-pointer">查看原始数据</summary><pre id="result" class="whitespace-pre-wrap text-sm text-on-surface-variant">付款并通过链上验证后显示数据。</pre></details>
-        <button id="retry" hidden class="border border-outline rounded px-4 py-2 text-primary">重试领取结果（不再付款）</button>
-        <p class="text-xs text-on-surface-variant">订单保留一小时；演示服务器重启会清空订单。付款后请保存交易记录和结果。</p>
-        <p id="delivery-state" class="text-sm text-on-surface-variant">尚未购买服务。</p>
-      </section>
-      <p class="text-xs text-on-surface-variant">本项目实现可配置模拟政策与 Fuji 链上规则金库（预算 / 单笔上限 / 白名单 / 防重放）。请求形态对齐 HTTP 402 / x402，完整协议与 facilitator 接入列为下一步。天气是固定样例，不是实时预报。</p>
-    </main>
-    <script type="module" src="/src/agent.js"></script>
-  </body>
-</html>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AgentVault · 服务购买</title></head><body class="console purchase"><header class="topbar"><a class="brand" href="/" aria-label="AgentVault 首页"><svg class="brand-logo" viewBox="0 0 50 54" aria-hidden="true"><path d="M25 2 47 15v25L25 53 3 40V15Z" fill="#1fa1ed"/><path d="m25 2 22 13-22 13L3 15Z" fill="#76ceff"/><path d="m25 28 22-13v25L25 53Z" fill="#0876c8"/><path d="m25 14 11 7v13l-11 7-11-7V21Z" fill="#062540"/><path d="m25 14 11 7-11 7-11-7Z" fill="#1b6ba5"/><path d="M25 28v13l-11-7V21Z" fill="#43baff"/></svg>AgentVault</a><nav aria-label="主导航"><a href="/">控制台</a><a href="/agent.html" aria-current="page">服务购买</a><a href="/live.html">链上测试</a><a href="/deploy.html">部署金库</a></nav><span class="simulation">▲ Fuji 测试网 · 测试 AVAX</span></header>
+<main><div class="purchase-heading"><div><h1>服务购买</h1><p>从任务到结果，每笔付款都经过规则检查。</p></div><ol class="purchase-progress" aria-label="购买进度"><li data-stage="1" class="active"><b>1</b>输入任务</li><li data-stage="2"><b>2</b>获取报价</li><li data-stage="3"><b>3</b>钱包确认</li><li data-stage="4"><b>4</b>结果交付</li></ol></div>
+<div class="purchase-layout"><section class="purchase-panel task-panel"><h2>你的任务</h2><div class="service-options"><button type="button" data-sample="text" class="sample" aria-pressed="false">▤ 文本统计</button><button type="button" data-sample="json" class="sample" aria-pressed="false">{ } JSON 检查</button><button type="button" data-sample="weather" class="sample" aria-pressed="false">☁ 天气样例</button></div>
+<label>任务描述<input id="task" maxlength="500" placeholder="例如：统计这段文本的字数"></label><label>待处理内容<textarea id="content" maxlength="10000" rows="5" placeholder="填写自己的文本或 JSON；天气样例无需填写。不要输入私钥等敏感内容。"></textarea></label><p class="service-note">关键词匹配工具 · 暂不支持通用 AI 问答<br>天气为上海固定样例，并非实时预报。</p>
+<div class="quote-panel"><span>服务价格</span><div class="price"><strong id="quote-price">—</strong><span>测试 AVAX</span></div><p id="quote" role="status">选择服务并填写内容，再获取报价。</p><dl><div><dt>合约规则</dt><dd id="rule-status">尚未检查</dd></div><div><dt>单笔上限</dt><dd id="quote-limit">—</dd></div><div><dt>付款前剩余预算</dt><dd id="quote-budget">—</dd></div></dl></div>
+<div class="purchase-actions"><button id="plan" class="secondary">① 获取报价并检查规则</button><button id="pay" class="primary" disabled>② 在钱包确认付款</button></div><p class="service-note">仅使用 Fuji 测试 AVAX，付款由你在钱包确认。需使用合约授权的 Agent 钱包。</p>
+<details class="contract-details"><summary>合约信息与规则设置</summary><p>此服务使用指定金库。新建自己的规则金库后，接入购买还需管理员更新服务端配置。</p><label>Fuji 合约地址<input id="address" readonly></label><a href="/deploy.html">设置自己的链上规则 →</a></details></section>
+<div class="delivery-column"><section class="purchase-panel delivery-panel" aria-live="polite"><div id="delivery-badge" class="delivery-badge">◇ 等待任务</div><h2 id="result-heading">服务交付</h2><div id="empty-delivery" class="empty-delivery"><div class="empty-symbol">▤</div><h3>结果将在这里显示</h3><p>完成规则检查与钱包付款后，<br>服务端核验链上凭证，再交付结果。</p><span>输入任务 → 检查规则 → 确认付款</span></div><div id="result-summary" hidden></div><div class="receipt-panel"><div><span>网络</span><strong>Avalanche Fuji</strong></div><div id="receipt"><span class="receipt-empty">尚无付款交易</span></div></div><details id="raw-result"><summary>{ } 查看原始数据</summary><pre id="result">付款并通过链上验证后显示数据。</pre></details><p id="delivery-state">尚未购买服务。</p><button id="retry" hidden class="secondary">重试领取结果（不再付款）</button><p class="service-note">结果加载失败时可重试领取，无需再次付款。<br>订单保留一小时，服务器重启会清空，请保存交易记录。</p></section>
+<details class="purchase-panel execution"><summary><strong>▤ 执行记录</strong><span id="latest-step">等待任务</span><span>⌄</span></summary><ol id="steps"><li>等待任务。</li></ol></details></div></div><footer><span>Fuji 测试网原型 · 完整 x402 接入尚未实现</span><a href="/">返回免钱包模拟控制台 ↗</a></footer></main><script type="module" src="/src/agent.js"></script></body></html>

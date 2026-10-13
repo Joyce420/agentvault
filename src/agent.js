@@ -1,4 +1,5 @@
-import './generated.css';
+import './console.css';
+import './purchase.css';
 import { BrowserProvider, Contract, formatEther, getAddress } from 'ethers';
 import artifact from './contract-artifact.json';
 
@@ -15,17 +16,26 @@ function step(message) {
   item.textContent = message;
   if ($('steps').firstElementChild?.textContent === '等待任务。') $('steps').replaceChildren();
   $('steps').append(item);
+  $('latest-step').textContent = message;
 }
 
 function reset() {
   $('steps').replaceChildren();
-  $('receipt').replaceChildren();
+  $('receipt').textContent = '尚无付款交易';
+  $('latest-step').textContent = '等待任务';
   $('result').textContent = '付款并通过链上验证后显示数据。';
   $('pay').disabled = true;
   $('result-summary').hidden = true;
   $('result-summary').replaceChildren();
   $('delivery-state').textContent = '尚未购买服务。';
   context = null;
+  $('empty-delivery').hidden = false;
+  $('result-heading').textContent = '服务交付';
+  $('quote-price').textContent = '—';
+  $('quote-limit').textContent = '—';
+  $('quote-budget').textContent = '—';
+  $('rule-status').textContent = '尚未检查';
+  setStage(1, '◇ 等待任务');
 }
 
 async function ensureFuji() {
@@ -41,6 +51,7 @@ async function plan() {
   if (planning || purchasing || pendingDelivery) return;
   planning = true;
   reset();
+  setStage(2, '◷ 正在检查');
   $('plan').disabled = true;
   for (const key of ['task', 'content']) $(key).disabled = true;
   try {
@@ -55,6 +66,7 @@ async function plan() {
     if (getAddress(quote.vault) !== vault) throw new Error('服务指定的保险箱与你输入的不一致。');
     const merchant = getAddress(quote.merchant);
     const amount = BigInt(quote.amountWei);
+    $('quote-price').textContent = formatEther(amount);
     step(`服务要求 ${formatEther(amount)} 测试 AVAX，收款地址 ${merchant}。`);
     const provider = await ensureFuji();
     if (await provider.getCode(vault) === '0x') throw new Error('该地址在 Fuji 上没有合约。');
@@ -64,7 +76,10 @@ async function plan() {
     if ((await contract.agent()).toLowerCase() !== account.toLowerCase()) throw new Error('当前钱包不是合约授权 Agent。');
     if (!(await contract.merchants(merchant))) throw new Error('服务商不在合约白名单。');
     const remaining = (await contract.budget()) - (await contract.spent());
-    if (amount > (await contract.perPaymentLimit()) || amount > remaining || amount > (await provider.getBalance(vault))) {
+    const limit = await contract.perPaymentLimit();
+    $('quote-limit').textContent = `${formatEther(limit)} 测试 AVAX`;
+    $('quote-budget').textContent = `${formatEther(remaining)} 测试 AVAX`;
+    if (amount > limit || amount > remaining || amount > (await provider.getBalance(vault))) {
       throw new Error('价格超出单笔上限、剩余预算或金库余额。');
     }
     const orderId = quote.orderId;
@@ -72,13 +87,16 @@ async function plan() {
     step(`AgentVault 合约规则预检查通过：商户在白名单内，价格未超过单笔上限及剩余预算 ${formatEther(remaining)} 测试 AVAX。等待你在钱包中确认付款。`);
     context = { contract, orderId, merchant, amount, vault, account };
     $('pay').disabled = false;
-  } catch (error) { step(`已停止，未发起付款交易：${error.shortMessage || error.message}`); }
+    $('rule-status').textContent = '✓ 预检查通过';
+    setStage(3, '◇ 等待钱包确认');
+  } catch (error) { $('rule-status').textContent = '未通过 / 未完成'; setStage(2, '检查未完成', true); step(`已停止，未发起付款交易：${error.shortMessage || error.message}`); }
   finally { planning = false; $('plan').disabled = false; for (const key of ['task', 'content']) $(key).disabled = false; }
 }
 
 async function pay() {
   if (!context || purchasing) return;
   purchasing = true;
+  setStage(3, '◷ 等待钱包确认');
   $('plan').disabled = true;
   for (const key of ['task', 'content']) $(key).disabled = true;
   $('pay').disabled = true;
@@ -89,13 +107,14 @@ async function pay() {
     pendingDelivery = { tx: tx.hash, order: orderId };
     try { sessionStorage.setItem('agentvault.pendingDelivery', JSON.stringify(pendingDelivery)); } catch {}
     showReceipt(tx.hash);
+    setStage(3, '◷ 交易已发送，等待确认');
     $('retry').hidden = false;
     step(`已发送付款交易 ${tx.hash}，等待 Fuji 确认。`);
     const receipt = await tx.wait();
     if (receipt.status !== 1) throw new Error('付款交易未成功。');
     step('付款成功。Agent 将交易证明交给服务端核验。');
     await receiveResult();
-  } catch (error) { step(error.shortMessage || error.message); }
+  } catch (error) { setStage(3, pendingDelivery ? '交易状态待核验' : '付款未完成', true); step(error.shortMessage || error.message); }
   finally { context = null; purchasing = false; $('plan').disabled = Boolean(pendingDelivery); for (const key of ['task', 'content']) $(key).disabled = false; }
 }
 
@@ -113,6 +132,7 @@ for (const button of document.querySelectorAll('.sample')) button.addEventListen
     text: ['统计文本字数', 'AgentVault 让 Agent 支付，但不能越权。'],
     json: ['检查 JSON 是否合法', '{"project":"AgentVault","network":"Fuji"}'],
   };
+  for (const sample of document.querySelectorAll('.sample')) sample.setAttribute('aria-pressed', String(sample === button));
   [$('task').value, $('content').value] = samples[button.dataset.sample];
   reset();
   $('quote').textContent = '样例已填入。点击“① 获取报价并检查规则”继续。';
@@ -122,10 +142,16 @@ function renderResult(data) {
   $('result').textContent = JSON.stringify(data, null, 2);
   const container = $('result-summary');
   container.replaceChildren(); container.hidden = false;
+  $('empty-delivery').hidden = true;
+  container.className = typeof data.characters === 'number' ? 'result-metrics' : 'result-text';
+  $('result-heading').textContent = typeof data.characters === 'number' ? '文本统计结果' : typeof data.valid === 'boolean' ? 'JSON 检查结果' : '天气样例';
   const add = (label, value) => {
     const row = document.createElement('p');
-    row.className = 'whitespace-pre-wrap break-words';
-    row.textContent = `${label}${value}`;
+    if (typeof value === 'number') {
+      const title = document.createElement('span'); title.textContent = label.replace('：', '');
+      const number = document.createElement('strong'); number.textContent = value;
+      row.append(title, number);
+    } else { row.textContent = `${label}${value}`; }
     container.append(row);
   };
   if (typeof data.characters === 'number') {
@@ -149,11 +175,13 @@ async function receiveResult() {
     const body = await response.json();
     if (!response.ok) throw new Error(body.error || '暂时无法领取结果');
     renderResult(body.data);
+    setStage(4, '✓ 已交付');
     $('delivery-state').textContent = '付款已确认 · 验链通过 · 结果已交付';
     step('服务端已核验付款事件、商户、金额和订单，返回服务结果。');
     try { sessionStorage.removeItem('agentvault.pendingDelivery'); } catch {}
     pendingDelivery = null; $('retry').hidden = true; $('plan').disabled = false;
   } catch (error) {
+    setStage(4, '结果尚未领取', true);
     $('delivery-state').textContent = `结果尚未领取：${error.message}。请重试领取，不要再次付款。`;
   } finally { receiving = false; $('retry').disabled = false; }
 }
@@ -169,8 +197,19 @@ function showReceipt(hash) {
 try {
   const saved = JSON.parse(sessionStorage.getItem('agentvault.pendingDelivery'));
   if (/^0x[0-9a-f]{64}$/i.test(saved?.tx) && /^0x[0-9a-f]{64}$/i.test(saved?.order)) {
+    setStage(3, '发现待领取交易');
     pendingDelivery = saved; $('retry').hidden = false; $('plan').disabled = true;
     showReceipt(saved.tx);
     $('delivery-state').textContent = '发现尚未领取结果的交易，请先重试领取，不要重复付款。';
   }
 } catch {}
+
+function setStage(stage, label, error = false) {
+  for (const item of document.querySelectorAll('[data-stage]')) {
+    const n = Number(item.dataset.stage);
+    item.className = n < stage ? 'done' : n === stage ? 'active' : '';
+    if (n === stage) item.setAttribute('aria-current', 'step'); else item.removeAttribute('aria-current');
+  }
+  $('delivery-badge').textContent = label;
+  $('delivery-badge').className = `delivery-badge ${error ? 'issue' : stage === 4 ? 'complete' : ''}`;
+}
