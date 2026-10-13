@@ -1,4 +1,5 @@
-import './generated.css';
+import './console.css';
+import './chain.css';
 import { BrowserProvider, Contract, formatEther, getAddress, id } from 'ethers';
 import artifact from './contract-artifact.json';
 
@@ -92,33 +93,40 @@ async function pay(action) {
     return;
   }
   busy = true; setButtons();
-  $('receipt').replaceChildren();
+  for (const button of buttons) button.classList.toggle('selected', button.dataset.action === action);
+  paintFlow('checking', '正在预检查');
   const address = await contract.getAddress();
   // Exceed by an amount visible at the six-decimal precision used in the UI.
   const overage = maxPayment / 5n > 1_000_000_000_000n ? maxPayment / 5n : 1_000_000_000_000n;
   const amount = action === 'overcap' ? maxPayment + overage : maxPayment / 2n;
+  $('request-amount').textContent = short(amount);
   const target = action === 'unknown' ? '0x000000000000000000000000000000000000dead' : merchant;
   const orderId = action === 'replay' ? lastPaidOrder : id(`agentvault-${address}-${Date.now()}-${Math.random()}`);
   try {
     status(`正在让 Fuji 合约预检查：${action}……`);
     await contract.pay.staticCall(orderId, target, amount);
     if (action !== 'normal') {
+      paintFlow('blocked', '已停止 · 未发送交易');
       status('预检查意外通过。为避免误付款，未提交交易。');
       audit('CHECK_PASSED', short(amount), target, orderId, '预检查意外通过；未发送交易');
       return;
     }
+    paintFlow('checking', '规则通过 · 等待钱包');
     status('规则检查通过。请在钱包中确认测试 AVAX 付款交易。');
     const tx = await contract.pay(orderId, target, amount);
     showTransaction(tx.hash, orderId);
+    paintFlow('checking', '交易等待确认');
     status('交易已发送，等待 Fuji 确认……');
     const receipt = await tx.wait();
     if (receipt.status !== 1) throw new Error('交易在链上被拒绝。');
     lastPaidOrder = orderId;
     localStorage.setItem(`agentvault.fuji.lastPaid.${address.toLowerCase()}`, orderId);
     await readContract();
+    paintFlow('success', '付款已确认');
     status(`付款成功：${short(amount)}。可打开上面的区块浏览器链接查看真实交易。`);
     audit('ALLOW', short(amount), target, orderId, `交易 ${tx.hash}`);
   } catch (error) {
+    paintFlow('blocked', action === 'normal' ? '付款未完成' : '预检查已拒绝');
     if (action === 'normal') status(`付款未完成：${errorText(error)}`);
     else status(`合约预检查拒绝了${action === 'overcap' ? '超额付款' : action === 'unknown' ? '非白名单商户' : '重复订单'}：${errorText(error)}。未发送交易 / 不消耗测试 AVAX。`);
     audit('REVERT', short(amount), target, orderId, `${errorText(error)}；${action === 'normal' ? '付款未完成' : '未发送交易'}`);
@@ -154,3 +162,9 @@ async function writeMerchant(allowed) {
 }
 $('merchant-allow').addEventListener('click', () => writeMerchant(true));
 $('merchant-remove').addEventListener('click', () => writeMerchant(false));
+
+function paintFlow(state, title) {
+  $('chain-flow').dataset.state = state;
+  $('flow-title').textContent = title;
+  $('merchant-state').textContent = state === 'success' ? '已收款' : '未执行';
+}

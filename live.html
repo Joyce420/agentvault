@@ -1,56 +1,9 @@
-<!doctype html>
-<html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AgentVault · Fuji 链上演示</title>
-  </head>
-  <body class="bg-surface text-on-surface font-body min-h-screen">
-    <main class="max-w-3xl mx-auto px-5 py-10 space-y-6">
-      <nav class="flex flex-wrap gap-5 text-sm text-primary"><a href="/">模拟演示</a><a href="/agent.html">Agent 购买服务</a><a href="/deploy.html">部署合约</a></nav>
-      <header>
-        <p class="text-secondary font-mono text-xs">AVALANCHE FUJI TESTNET · 真实链上合约</p>
-        <h1 class="text-3xl font-bold mt-2">链上付款演示</h1>
-        <p class="mt-2 rounded border border-secondary px-3 py-2 text-sm text-secondary font-semibold">真实 Fuji 测试网操作：使用测试 AVAX；成功付款需要你在钱包中确认。这里显示的余额和规则来自链上合约。</p>
-        <p class="text-on-surface-variant mt-3">连接钱包后，读取合约真实余额与规则。成功付款需要你在钱包里确认交易；被拒的请求先由合约预检查，不会消耗测试 AVAX 手续费。</p>
-        <p class="text-sm text-on-surface-variant mt-2">三步：① 在钱包切换 Avalanche Fuji → ② 连接钱包 → ③ 读取合约。这里显示链上真实参数；首页的模拟政策不会改变此合约。预算和单笔上限需在部署新合约时设定。</p>
-      </header>
-      <section class="border border-outline rounded-lg p-5 space-y-3 bg-surface-container-low">
-        <label class="block text-sm">Fuji 合约地址
-          <input id="address" placeholder="0x..." class="mt-1 block w-full bg-surface-container rounded border border-outline p-2 text-on-surface font-mono text-xs" />
-        </label>
-        <button id="connect" class="bg-primary text-on-primary rounded px-4 py-2 font-semibold">连接钱包并读取合约</button>
-        <div id="wallet" class="font-mono text-xs text-on-surface-variant break-all">尚未连接</div>
-      </section>
-      <section class="grid grid-cols-1 sm:grid-cols-3 gap-3" aria-live="polite">
-        <div class="bg-surface-container-low border border-outline rounded p-4"><div class="text-xs text-on-surface-variant">金库余额</div><div id="balance" class="font-mono text-xl mt-2">—</div></div>
-        <div class="bg-surface-container-low border border-outline rounded p-4"><div class="text-xs text-on-surface-variant">剩余预算</div><div id="budget" class="font-mono text-xl mt-2">—</div></div>
-        <div class="bg-surface-container-low border border-outline rounded p-4"><div class="text-xs text-on-surface-variant">单笔上限</div><div id="limit" class="font-mono text-xl mt-2">—</div></div>
-      </section>
-      <section class="border border-outline rounded-lg p-5 space-y-3 bg-surface-container-low">
-        <h2 class="text-lg font-semibold">Owner 更新链上商户白名单</h2>
-        <p class="text-xs text-on-surface-variant">仅合约 Owner 可调用；须由钱包签名并支付 Fuji 测试 AVAX 手续费。预算和单笔上限在此合约中不可在线修改。</p>
-        <input id="merchant-address" placeholder="商户钱包地址 0x..." class="w-full bg-surface-container rounded border border-outline p-2 font-mono text-xs" />
-        <div class="flex flex-wrap gap-2"><button id="merchant-allow" disabled class="border border-secondary text-secondary rounded px-3 py-2 disabled:opacity-40">写入链上：授权</button><button id="merchant-remove" disabled class="border border-error text-error rounded px-3 py-2 disabled:opacity-40">写入链上：移除</button></div>
-        <div id="merchant-write-result" class="text-xs break-all" aria-live="polite"></div>
-      </section>
-      <section class="border border-outline rounded-lg p-5 space-y-4 bg-surface-container-low">
-        <h2 class="text-xl font-semibold">发起测试请求</h2>
-        <p id="merchant-note" class="text-sm text-on-surface-variant">等待读取已授权商户。</p>
-        <div class="grid sm:grid-cols-2 gap-3">
-          <button data-action="normal" disabled class="action border border-secondary text-secondary rounded p-3 text-left disabled:opacity-40">01 正常付款<br /><span class="text-xs">符合合约上限与白名单</span></button>
-          <button data-action="overcap" disabled class="action border border-error text-error rounded p-3 text-left disabled:opacity-40">02 超出单笔上限<br /><span class="text-xs">预检查应被拒绝</span></button>
-          <button data-action="unknown" disabled class="action border border-error text-error rounded p-3 text-left disabled:opacity-40">03 非白名单商户<br /><span class="text-xs">预检查应被拒绝</span></button>
-          <button data-action="replay" disabled class="action border border-error text-error rounded p-3 text-left disabled:opacity-40">04 重复订单<br /><span class="text-xs">需先有成功付款</span></button>
-        </div>
-      </section>
-      <section class="border border-outline rounded-lg p-5 space-y-3 bg-surface-container-low" aria-live="polite">
-        <h2 class="text-xl font-semibold">结果</h2>
-        <p id="status" class="text-sm">等待连接钱包。</p>
-        <div id="receipt" class="text-sm break-all"></div>
-        <h3 class="font-semibold">链上操作审计</h3><div id="audit-log" class="font-mono text-xs break-all space-y-1" aria-live="polite"><p>等待链上操作。</p></div>
-      </section>
-    </main>
-    <script type="module" src="/src/live.js"></script>
-  </body>
-</html>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AgentVault · 链上规则测试</title></head><body class="console chain"><header class="topbar"><a class="brand" href="/" aria-label="AgentVault 首页"><svg class="brand-logo" viewBox="0 0 50 54" aria-hidden="true"><path d="M25 2 47 15v25L25 53 3 40V15Z" fill="#1fa1ed"/><path d="m25 2 22 13-22 13L3 15Z" fill="#76ceff"/><path d="m25 28 22-13v25L25 53Z" fill="#0876c8"/><path d="m25 14 11 7v13l-11 7-11-7V21Z" fill="#062540"/><path d="m25 14 11 7-11 7-11-7Z" fill="#1b6ba5"/><path d="M25 28v13l-11-7V21Z" fill="#43baff"/></svg>AgentVault</a><nav aria-label="主导航"><a href="/">控制台</a><a href="/agent.html">服务购买</a><a href="/live.html" aria-current="page">链上测试</a><a href="/deploy.html">部署金库</a></nav><span class="simulation">▲ Fuji 测试网 · 测试 AVAX</span></header><main>
+<div class="chain-heading"><div><h1>链上规则测试</h1><p>查看真实合约状态，验证付款边界。</p></div><section class="connection"><label>Fuji 合约地址<input id="address" placeholder="0x..."></label><button id="connect" class="secondary">连接钱包并读取</button><p id="wallet">尚未连接钱包</p></section></div>
+<section class="chain-metrics" aria-live="polite"><article><i>▣</i><div>金库余额<strong id="balance">—</strong></div></article><article><i>◴</i><div>剩余预算<strong id="budget">—</strong></div></article><article><i>▱</i><div>单笔上限<strong id="limit">—</strong></div></article></section>
+<section class="chain-flow" id="chain-flow" aria-live="polite"><div class="flow-party"><i><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="14" r="8" fill="currentColor"/><path d="M9 41v-5a15 15 0 0 1 30 0v5Z" fill="currentColor"/></svg></i><div><h2>Agent 请求</h2><p>请求付款</p><strong id="request-amount">—</strong></div></div><span class="flow-arrow">⟶</span><div class="flow-vault"><svg viewBox="0 0 120 130" aria-hidden="true"><defs><linearGradient id="steel" x2="1" y2="1"><stop stop-color="#c7e9ff"/><stop offset=".5" stop-color="#3989c5"/><stop offset="1" stop-color="#102942"/></linearGradient></defs><path d="M60 5 110 30v62l-50 33L10 92V30Z" fill="url(#steel)" stroke="#98d5ff" stroke-width="2"/><path d="M60 18 98 39v48l-38 25-38-25V39Z" fill="#123957" stroke="#62abe1"/><circle cx="60" cy="65" r="28" fill="#173149" stroke="#aacfe9" stroke-width="5"/><path d="M60 39v52M34 65h52M42 47l36 36M42 83l36-36" stroke="#83bce5" stroke-width="4"/><circle cx="60" cy="65" r="10" fill="#b7d9f1"/></svg><span>合约规则检查</span></div><div class="flow-verdict"><h2 id="flow-title">等待规则检查</h2><p id="status">连接钱包并读取合约后，选择测试场景。</p></div><span class="flow-arrow">⟶</span><div class="flow-party merchant"><i><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M9 22v21h30V22M17 43V29h14v14M5 20 10 7h28l5 13M5 20q5 10 10 0 5 10 9 0 5 10 9 0 5 10 10 0Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/></svg></i><div><h2>商户</h2><p id="merchant-state">未执行</p></div></div></section>
+<h2 class="scenario-title">选择测试场景</h2><section class="chain-scenarios">
+<button class="action" data-action="normal" disabled><i>▷</i><div><strong>正常付款</strong><p>请求在规则范围内的金额</p><span>钱包确认</span></div></button><button class="action" data-action="overcap" disabled><i>×</i><div><strong>超额付款</strong><p>请求超过单笔上限的金额</p><span>合约预检查</span></div></button><button class="action" data-action="unknown" disabled><i>△</i><div><strong>非白名单</strong><p>向未授权商户发起请求</p><span>合约预检查</span></div></button><button class="action" data-action="replay" disabled><i>▤</i><div><strong>重复订单</strong><p>需先有一笔成功付款</p><span>合约预检查</span></div></button></section>
+<div class="chain-bottom"><section class="chain-panel"><h2>▤ 合约规则</h2><p id="merchant-note">等待读取已授权商户。</p><div class="rule-row"><span>预算与单笔上限</span><span>部署后固定，无法修改。</span><a href="/deploy.html">部署新金库 ↗</a></div><details><summary>商户授权管理 · 仅 Owner</summary><p>由钱包确认链上交易，需支付测试 AVAX 手续费。</p><input id="merchant-address" placeholder="商户钱包地址 0x..."><div class="owner-actions"><button id="merchant-allow" disabled>写入链上：授权</button><button id="merchant-remove" disabled>写入链上：移除</button></div><p id="merchant-write-result" aria-live="polite"></p></details></section>
+<section class="chain-panel records"><h2>◷ 执行记录</h2><div class="record-current"><span>本次操作与预检查</span><div id="audit-log" aria-live="polite"><p>等待链上操作。</p></div></div><div class="record-receipt"><span>付款交易凭证</span><div id="receipt">本次会话尚无付款交易。</div></div></section></div>
+<footer>真实 Fuji 测试网 · 预检查不会发送交易，正常付款需钱包确认。<a href="/">返回免钱包模拟控制台 ↗</a></footer></main><script type="module" src="/src/live.js"></script></body></html>
