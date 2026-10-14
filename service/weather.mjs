@@ -29,11 +29,11 @@ export function createWeatherService({
   const iface = new Interface(ABI);
   const redeemed = new Set();
 
-  async function verifyPayment(txHash, orderId) {
+  async function verifyPayment(txHash, orderId, consume = true) {
     if (!/^0x[\da-fA-F]{64}$/.test(txHash || '') || !/^0x[\da-fA-F]{64}$/.test(orderId || '')) {
       throw new Error('交易哈希或订单编号格式无效');
     }
-    if (redeemed.has(orderId.toLowerCase())) throw new Error('该订单已领取过服务');
+    if (consume && redeemed.has(orderId.toLowerCase())) throw new Error('该订单已领取过服务');
     const receipt = await provider.getTransactionReceipt(txHash);
     if (!receipt || receipt.status !== 1) throw new Error('交易尚未在 Fuji 成功确认');
     if (receipt.to?.toLowerCase() !== vault.toLowerCase()) throw new Error('付款目标不是指定保险箱');
@@ -53,9 +53,9 @@ export function createWeatherService({
       } catch { return false; }
     });
     if (!paid) throw new Error('交易中没有匹配的服务付款记录');
-    redeemed.add(orderId.toLowerCase());
+    if (consume) redeemed.add(orderId.toLowerCase());
     return report;
   }
 
-  return { vault, merchant, price: PRICE.toString(), report: async (txHash, orderId) => verifyPayment(txHash, orderId) };
+  return { vault, merchant, price: PRICE.toString(), verifyReceipt: (txHash, orderId) => verifyPayment(txHash, orderId, false), report: async (txHash, orderId) => verifyPayment(txHash, orderId) };
 }

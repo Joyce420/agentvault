@@ -85,7 +85,7 @@ async function plan() {
     const orderId = quote.orderId;
     await contract.pay.staticCall(orderId, merchant, amount);
     step(`AgentVault 合约规则预检查通过：商户在白名单内，价格未超过单笔上限及剩余预算 ${formatEther(remaining)} 测试 AVAX。等待你在钱包中确认付款。`);
-    context = { contract, orderId, merchant, amount, vault, account };
+    context = { contract, orderId, merchant, amount, vault, account, recovery: quote.recovery };
     $('pay').disabled = false;
     $('rule-status').textContent = '✓ 预检查通过';
     setStage(3, '◇ 等待钱包确认');
@@ -100,12 +100,14 @@ async function pay() {
   $('plan').disabled = true;
   for (const key of ['task', 'content']) $(key).disabled = true;
   $('pay').disabled = true;
-  const { contract, orderId, merchant, amount, account } = context;
+  const { contract, orderId, merchant, amount, account, recovery } = context;
   try {
     if ((await contract.runner.getAddress()).toLowerCase() !== account.toLowerCase()) throw new Error('钱包账号已变更，请重新检查请求。');
+    // Refuse to send a payment unless recovery data can be saved first.
+    localStorage.setItem('agentvault.pendingDelivery', JSON.stringify({ order: orderId, recovery }));
     const tx = await contract.pay(orderId, merchant, amount);
-    pendingDelivery = { tx: tx.hash, order: orderId };
-    try { sessionStorage.setItem('agentvault.pendingDelivery', JSON.stringify(pendingDelivery)); } catch {}
+    pendingDelivery = { tx: tx.hash, order: orderId, recovery };
+    try { localStorage.setItem('agentvault.pendingDelivery', JSON.stringify(pendingDelivery)); } catch { step('浏览器未能保存交易号，请保留当前页面和交易凭证。'); }
     showReceipt(tx.hash);
     setStage(3, '◷ 交易已发送，等待确认');
     $('retry').hidden = false;
@@ -173,16 +175,18 @@ async function receiveResult() {
   try {
     const response = await fetch('/api/task', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(pendingDelivery) });
     const body = await response.json();
-    if (!response.ok) throw new Error(body.error || '暂时无法领取结果');
+    if (!response.ok) throw Object.assign(new Error(body.error || '暂时无法领取结果'), { terminal: ['ORDER_UNAVAILABLE', 'INVALID_RECOVERY'].includes(body.code) });
     renderResult(body.data);
     setStage(4, '✓ 已交付');
     $('delivery-state').textContent = '付款已确认 · 验链通过 · 结果已交付';
     step('服务端已核验付款事件、商户、金额和订单，返回服务结果。');
-    try { sessionStorage.removeItem('agentvault.pendingDelivery'); } catch {}
+    try { localStorage.removeItem('agentvault.pendingDelivery'); sessionStorage.removeItem('agentvault.pendingDelivery'); } catch {}
     pendingDelivery = null; $('retry').hidden = true; $('plan').disabled = false;
   } catch (error) {
-    setStage(4, '结果尚未领取', true);
-    $('delivery-state').textContent = `结果尚未领取：${error.message}。请重试领取，不要再次付款。`;
+    setStage(3, '结果尚未领取', true);
+    $('delivery-state').textContent = `结果尚未领取：${error.message}${error.terminal ? '' : ' 可重试领取，不要再次付款。'}`;
+    $('retry').hidden = Boolean(error.terminal);
+    step($('delivery-state').textContent);
   } finally { receiving = false; $('retry').disabled = false; }
 }
 $('retry').addEventListener('click', receiveResult);
@@ -195,11 +199,12 @@ function showReceipt(hash) {
   $('receipt').replaceChildren(a);
 }
 try {
-  const saved = JSON.parse(sessionStorage.getItem('agentvault.pendingDelivery'));
+  const saved = JSON.parse(localStorage.getItem('agentvault.pendingDelivery') || sessionStorage.getItem('agentvault.pendingDelivery'));
   if (/^0x[0-9a-f]{64}$/i.test(saved?.tx) && /^0x[0-9a-f]{64}$/i.test(saved?.order)) {
     setStage(3, '发现待领取交易');
     pendingDelivery = saved; $('retry').hidden = false; $('plan').disabled = true;
     showReceipt(saved.tx);
+    if (saved.recovery) { $('task').value = saved.recovery.task; $('content').value = saved.recovery.content; }
     $('delivery-state').textContent = '发现尚未领取结果的交易，请先重试领取，不要重复付款。';
   }
 } catch {}

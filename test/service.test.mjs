@@ -32,5 +32,9 @@ test('service delivers only after a matching confirmed vault payment and rejects
     const data = await service.report(tx.hash, orderId);
     assert.equal(data.city, 'Shanghai');
     await assert.rejects(service.report(tx.hash, orderId), /已领取过服务/);
+    // Recovery rechecks the receipt without consuming another payment.
+    assert.equal((await service.verifyReceipt(tx.hash, orderId)).city, 'Shanghai');
+    assert.equal((await service.verifyReceipt(tx.hash, orderId)).city, 'Shanghai');
+    await assert.rejects(service.verifyReceipt(tx.hash, id('changed-task')), /匹配的服务付款记录/);
   } finally { await rpc.disconnect(); }
 });

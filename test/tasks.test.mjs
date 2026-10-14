@@ -15,7 +15,7 @@ test('tasks reject unsupported requests and process user content', () => {
 
 test('task quote binds content to an order and does not deliver on failed verification', async () => {
   let verified = false;
-  const api = createWeatherMiddleware({ price: '100', vault: 'vault', merchant: 'merchant', report: async () => { if (!verified) throw new Error('未付款'); } });
+  const api = createWeatherMiddleware({ price: '100', vault: 'vault', merchant: 'merchant', verifyReceipt: async () => { if (!verified) throw new Error('未付款'); } });
   async function request(body) {
     const req = Readable.from([JSON.stringify(body)]); req.url = '/api/task'; req.method = 'POST';
     let status, data;
@@ -32,4 +32,35 @@ test('task quote binds content to an order and does not deliver on failed verifi
   assert.equal(result.data.data.characters, 3);
   assert.equal((await request({ tx: 'confirmed', order })).data.data.characters, 3);
   assert.equal((await request({ tx: 'other', order })).status, 400);
+});
+
+async function call(api, body) {
+  const req = Readable.from([JSON.stringify(body)]); req.url = '/api/task'; req.method = 'POST';
+  let status, data;
+  await api(req, { writeHead(v) { status = v; }, end(v) { data = JSON.parse(v); } }, () => assert.fail());
+  return { status, data };
+}
+
+test('paid task survives server restart and cache expiry without allowing content substitution', async () => {
+  let paidOrder;
+  const service = { price: '100', vault: 'vault', merchant: 'merchant', verifyReceipt: async (tx, order) => {
+    if (tx !== 'confirmed' || order !== paidOrder) throw new Error('未付款');
+  } };
+  const original = createWeatherMiddleware(service);
+  const quote = (await call(original, { task: '统计文本字数', content: '你好 abc' })).data;
+  paidOrder = quote.orderId;
+  const body = { tx: 'confirmed', order: paidOrder, recovery: quote.recovery };
+  const restarted = createWeatherMiddleware(service);
+  assert.equal((await call(restarted, { ...body, tx: 'unpaid' })).status, 400);
+  assert.equal((await call(restarted, { ...body, recovery: { ...quote.recovery, content: 'changed' } })).status, 400);
+  assert.equal((await call(restarted, body)).data.data.characters, 6);
+  assert.equal((await call(restarted, body)).data.data.characters, 6);
+  const now = Date.now;
+  try {
+    Date.now = () => now() + 7200000;
+    assert.equal((await call(original, body)).data.data.characters, 6);
+  } finally { Date.now = now; }
+  const lost = await call(restarted, { tx: 'confirmed', order: 'old-order' });
+  assert.equal(lost.status, 410);
+  assert.equal(lost.data.code, 'ORDER_UNAVAILABLE');
 });

@@ -1,6 +1,15 @@
 import { createWeatherService } from './weather.mjs';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, createHash } from 'node:crypto';
 import { parseTask, executeTask } from './tasks.mjs';
+
+// The on-chain order commits to the complete task. Recovery needs no server secret
+// or ephemeral disk, and changing content produces a different unpaid order.
+function recoveryOrder(recovery, service) {
+  if (recovery?.version !== 1 || !/^[a-f0-9]{64}$/.test(recovery.nonce || '')) throw new Error('订单恢复资料无效');
+  const job = parseTask(recovery.task, recovery.content);
+  const canonical = JSON.stringify(['agentvault-task-v1', 43113, service.vault.toLowerCase(), service.merchant.toLowerCase(), service.price, recovery.nonce, job]);
+  return { order: `0x${createHash('sha256').update(canonical).digest('hex')}`, job };
+}
 
 function send(res, status, body) {
   res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
@@ -27,8 +36,13 @@ export function createWeatherMiddleware(service = createWeatherService()) {
         const now = Date.now();
         for (const [key, job] of jobs) if (job.expires < now) jobs.delete(key);
         if (input.tx) {
-          const job = jobs.get(input.order);
-          if (!job) return send(res, 400, { error: '任务不存在或已过期，请勿再次付款，保留交易凭证。' });
+          let job = jobs.get(input.order);
+          if (!job && input.recovery) {
+            const restored = recoveryOrder(input.recovery, service);
+            if (restored.order !== input.order) return send(res, 400, { code: 'INVALID_RECOVERY', error: '恢复资料与付款订单不匹配，请保留原始资料和交易凭证。' });
+            job = { ...restored.job, recoverable: true };
+          }
+          if (!job) return send(res, 410, { code: 'ORDER_UNAVAILABLE', error: '旧版订单任务已丢失或过期，无法自动恢复。请保留交易凭证，不要再次付款；重复领取无法修复此订单。' });
           if (job.delivery) {
             if (job.tx !== input.tx) return send(res, 400, { error: '交易与已交付订单不一致。' });
             return send(res, 200, { data: job.delivery });
@@ -37,7 +51,7 @@ export function createWeatherMiddleware(service = createWeatherService()) {
           job.verifying = true;
           try {
             const data = executeTask(job);
-            await service.report(input.tx, input.order);
+            await (job.recoverable ? service.verifyReceipt : service.report)(input.tx, input.order);
             job.tx = input.tx;
             job.delivery = data;
             return send(res, 200, { data });
@@ -45,9 +59,10 @@ export function createWeatherMiddleware(service = createWeatherService()) {
         }
         if (jobs.size >= 1000) return send(res, 503, { error: '服务繁忙，请稍后再试。' });
         const job = parseTask(input.task, input.content);
-        const orderId = `0x${randomBytes(32).toString('hex')}`;
-        jobs.set(orderId, { ...job, expires: now + 60 * 60 * 1000 });
-        return send(res, 402, { chainId: 43113, asset: 'AVAX', amountWei: service.price, vault: service.vault, merchant: service.merchant, orderId, description: job.description, task: job.task });
+        const recovery = { version: 1, nonce: randomBytes(32).toString('hex'), task: input.task, content: input.content || '' };
+        const { order: orderId } = recoveryOrder(recovery, service);
+        jobs.set(orderId, { ...job, recoverable: true, expires: now + 60 * 60 * 1000 });
+        return send(res, 402, { chainId: 43113, asset: 'AVAX', amountWei: service.price, vault: service.vault, merchant: service.merchant, orderId, recovery, description: job.description, task: job.task });
       } catch (error) { return send(res, 400, { error: error.message || '任务处理失败' }); }
     }
     if (url.pathname !== '/api/weather') return next();
