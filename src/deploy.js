@@ -18,7 +18,7 @@ const link = (label, url) => {
 };
 
 async function connect() {
-  if (!window.ethereum) throw new Error('没有检测到浏览器钱包。请用安装了 MetaMask 或 Core Wallet 的浏览器打开本地页面。');
+  if (!window.ethereum) throw new Error('没有检测到浏览器钱包。请用安装了 MetaMask 或 Core Wallet 的浏览器打开本页面。');
   await window.ethereum.request({ method: 'eth_requestAccounts' });
   try {
     await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: FUJI.chainId }] });

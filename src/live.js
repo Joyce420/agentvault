@@ -1,9 +1,11 @@
 import './console.css';
 import './chain.css';
-import { BrowserProvider, Contract, formatEther, getAddress, id } from 'ethers';
+import { BrowserProvider, JsonRpcProvider, Contract, formatEther, getAddress, id } from 'ethers';
 import artifact from './contract-artifact.json';
 
 const FUJI_ID = '0xa869';
+const DEFAULT_VAULT = '0x7fb5fcE5542dB70030d6d77788d3a46d2be9C27D';
+const DEFAULT_MERCHANT = '0x1f3f82113b2d499f18336b2e59AB168A0b5a8B62';
 const explorer = 'https://explorer-test.avax.network/c-chain';
 const $ = key => document.getElementById(key);
 const buttons = [...document.querySelectorAll('.action')];
@@ -26,7 +28,7 @@ function audit(result, amount, target, orderId, reason) {
 const short = amount => `${Number(formatEther(amount)).toFixed(6)} 测试 AVAX`;
 const errorText = error => error.reason || error.revert?.args?.[0] || error.shortMessage || error.message || '未知错误';
 const setButtons = () => {
-  for (const button of buttons) button.disabled = busy || !contract;
+  for (const button of buttons) button.disabled = busy || !contract || !signer;
   $('merchant-allow').disabled = busy || !contract || !isOwner;
   $('merchant-remove').disabled = busy || !contract || !isOwner;
 };
@@ -136,7 +138,21 @@ async function pay(action) {
   }
 }
 
-$('address').value = localStorage.getItem('agentvault.fuji.address') || '';
+$('address').value = localStorage.getItem('agentvault.fuji.address') || DEFAULT_VAULT;
+async function readPublicVault() {
+  try {
+    const address = getAddress($('address').value.trim());
+    provider = new JsonRpcProvider('https://api.avax-test.network/ext/bc/C/rpc', 43113);
+    if (await provider.getCode(address) === '0x') throw new Error('该地址在 Fuji 上没有合约。');
+    contract = new Contract(address, artifact.abi, provider);
+    merchant = localStorage.getItem(`agentvault.fuji.merchant.${address.toLowerCase()}`) || DEFAULT_MERCHANT;
+    const [owner, agent] = await Promise.all([contract.owner(), contract.agent()]);
+    await readContract();
+    $('wallet').textContent = `公开读取 · 所有者 ${owner} · Agent ${agent}`;
+    status('已读取真实 Fuji 合约。要执行测试或修改白名单，请连接授权钱包。');
+  } catch (error) { status(`公开读取失败：${errorText(error)}`); }
+}
+readPublicVault();
 $('connect').addEventListener('click', async () => {
   try { await connect(); } catch (error) { status(`连接失败：${errorText(error)}`); }
 });
