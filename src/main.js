@@ -13,8 +13,8 @@ function render() {
   $('budget-progress').max = policy.budget;
   $('budget-progress').value = remaining;
   $('normal-hint').textContent = remaining > 0 ? `${money(normalAmount())} → ${policy.merchants[0]}` : '预算已用完，请重置';
-  $('over-hint').textContent = `${money(policy.perTx + 1)} > 上限 ${money(policy.perTx)}`;
-  $('replay-hint').textContent = lastOrder ? lastOrder.orderId : '需先完成一笔付款';
+  $('over-hint').textContent = `原因：超过单笔上限 ${money(policy.perTx)}`;
+  $('replay-hint').textContent = lastOrder ? '原因：订单已支付' : '需先完成一笔模拟付款';
 }
 function log(allowed, message, detail = '') {
   const time = new Date().toLocaleTimeString('zh-CN', {hour12:false});
@@ -51,9 +51,11 @@ function run(amount, merchant, orderId) {
   $('merchant-name').textContent = merchant;
   if (!reason) { remaining = Math.round((remaining - amount)*100)/100; paid.add(orderId); lastOrder = {amount,merchant,orderId}; }
   const description = reason === '超过单笔上限' ? `${money(amount)} 超过单笔上限 ${money(policy.perTx)}` : reason;
-  decision(reason ? 'deny' : 'allow', reason ? `已拦截：${description}` : `付款通过：${money(amount)} 模拟额度`, reason ? `未扣款 · 剩余预算 ${money(remaining)}` : `已扣除 ${money(amount)} · 剩余预算 ${money(remaining)}`);
+  decision(reason ? 'deny' : 'allow', reason ? `模拟拦截：${description}` : `模拟放行：${money(amount)} 模拟额度`, reason ? `命中规则：${description} · 未扣模拟额度 · 剩余 ${money(remaining)}` : `四项规则均通过 · 已扣模拟额度 ${money(amount)} · 剩余 ${money(remaining)}`);
   $('merchant-status').textContent = reason ? '未执行' : '模拟收款成功';
-  log(!reason, reason ? `已拦截：${description}` : `已放行：${money(amount)}`, `${merchant} · ${orderId} · 剩余 ${money(remaining)}`);
+  log(!reason, reason ? `模拟拦截：${description}` : `模拟放行：${money(amount)}`, `${merchant} · ${orderId} · 剩余 ${money(remaining)}`);
+  const selected = document.querySelector('[data-case][aria-pressed="true"] .expect');
+  if (selected) { selected.textContent = reason ? '✕ 模拟拦截' : '✓ 模拟放行'; selected.className = `expect ${reason ? 'deny' : 'allow'}`; }
   render();
 }
 const normalAmount = () => Math.min(Math.round(policy.perTx * 60)/100, remaining);
@@ -65,12 +67,14 @@ $('btn-unknown').addEventListener('click',()=>{select('unknown');run(Math.min(Ma
 $('btn-replay').addEventListener('click',()=>{
   select('replay');
   if(lastOrder) return run(lastOrder.amount,lastOrder.merchant,lastOrder.orderId);
+  $('btn-replay').querySelector('.expect').textContent = '待测试：需成功订单';
   ruleStates(); $('request-amount').textContent='—'; $('request-merchant').textContent='尚无成功订单'; $('merchant-status').textContent='未执行';
   decision('idle','还没有可重放的订单','请先点击「正常付款」，再测试重复订单。未扣款。');
   log(false,'未发起请求：需先有成功订单');
 });
 function reset() {
   remaining=policy.budget; paid.clear();lastOrder=null;orderCount=2041;
+  for (const button of document.querySelectorAll('[data-case]')) { const badge = button.querySelector('.expect'); const normal = button.dataset.case === 'normal'; badge.textContent = normal ? '预期放行' : '预期拦截'; badge.className = `expect ${normal ? 'allow' : 'deny'}`; }
   select('');ruleStates();decision('idle','等待付款请求','先试正常付款，再看看规则如何拦截。');
   $('request-amount').textContent='—';$('request-merchant').textContent='选择下方场景开始';$('merchant-name').textContent=policy.merchants[0];$('merchant-status').textContent='等待中';
   render();
