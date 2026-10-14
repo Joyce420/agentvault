@@ -8,3 +8,5 @@
 
 /* Homepage positioning and explicit simulation outcomes. */
 .home .intro h1{font-size:clamp(25px,2.5vw,38px);letter-spacing:-1px;white-space:normal}.home .intro .positioning{font-size:13px;line-height:1.7;white-space:normal;margin-top:10px;max-width:360px}.home .case-hint{display:block;font-size:11px;margin-top:7px;line-height:1.4}.home .decision p{white-space:normal;line-height:1.5}.home .scenario{min-height:128px}@media(max-width:600px){.home .intro h1{font-size:29px}.home .case-hint{font-size:10px}}
+
+.home .demo-path{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:0 0 13px;padding:9px 14px;border:1px solid #1b496b;border-radius:9px;background:#0a2238;color:#a9c9df;font-size:12px}.home .demo-path strong{color:#40e9b1;font-size:13px}.home .demo-path a{color:#39c9f0;margin-left:auto}.home .demo-path a:hover{text-decoration:underline}@media(max-width:700px){.home .demo-path{gap:7px 12px}.home .demo-path span{width:100%}.home .demo-path a{margin-left:0}}
